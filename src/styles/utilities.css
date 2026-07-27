@@ -1,0 +1,32 @@
+/* Reusable global utility classes that aren't plain @theme tokens. */
+
+/* Gradient-border hover technique — reusable across buttons and cards.
+   An opaque inner layer covers everything but the 1px border ring, where the
+   accent-a -> accent-b gradient shows through. Must be
+   `background-clip: padding-box, border-box` — NOT content-box; content-box
+   excludes the padding too, so the gradient bleeds through the padding
+   region as a wash instead of a crisp ring. `--gradient-border-fill` stands
+   in for whatever surface the element sits on — override it per instance
+   rather than hardcoding a surface colour into the clip rule. Shared by the
+   outlined button and the card hover border sweep — don't regress either
+   one back to content-box.
+
+   The rest-state border/fill live on `.gradient-border` itself (not left to
+   a consumer's own rule) on purpose: a component-scoped style with equal
+   selector specificity that merely loads later in the cascade — e.g. an
+   Astro scoped <style> — can silently win over `.gradient-border:hover` and
+   kill the effect. Keeping both states self-contained here removes that
+   collision instead of relying on consumers to avoid it. */
+.gradient-border {
+  --gradient-border-fill: var(--color-surface);
+  background-color: var(--gradient-border-fill);
+  border: 1px solid var(--color-hairline);
+}
+.gradient-border:hover {
+  border-color: transparent;
+  background-image:
+    linear-gradient(var(--gradient-border-fill), var(--gradient-border-fill)),
+    linear-gradient(90deg, var(--color-accent-a), var(--color-accent-b));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}

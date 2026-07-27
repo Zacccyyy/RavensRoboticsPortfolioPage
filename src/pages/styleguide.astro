@@ -1,0 +1,216 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const colors = [
+  { name: "bg-void", class: "bg-bg-void", value: "#0B0D0F" },
+  { name: "surface", class: "bg-surface", value: "#14181C" },
+  { name: "surface-raised", class: "bg-surface-raised", value: "#1C2229" },
+  { name: "ink", class: "bg-ink", value: "#E8EAED" },
+  { name: "ink-muted", class: "bg-ink-muted", value: "#8A939B" },
+  { name: "accent-a", class: "bg-accent-a", value: "#7C5CFF" },
+  { name: "accent-b", class: "bg-accent-b", value: "#00E0C6" },
+  { name: "signal", class: "bg-signal", value: "#FF6B35" },
+  { name: "hairline", class: "bg-hairline", value: "rgba(232,234,237,0.08)" },
+  { name: "hairline-bright", class: "bg-hairline-bright", value: "rgba(232,234,237,0.20)" },
+  { name: "grid-line", class: "bg-grid-line", value: "rgba(232,234,237,0.04)" },
+];
+
+const typeScale = [
+  { name: "display-xl", classes: "font-display text-display-xl", sample: "Display XL" },
+  { name: "display-lg", classes: "font-display text-display-lg", sample: "Display LG" },
+  { name: "h2", classes: "font-display text-h2", sample: "Heading Two" },
+  { name: "h3", classes: "font-display text-h3", sample: "Heading Three" },
+  { name: "body-lg", classes: "font-body text-body-lg", sample: "Body large — the quick brown fox jumps over the lazy dog." },
+  { name: "body", classes: "font-body text-body", sample: "Body — the quick brown fox jumps over the lazy dog." },
+  { name: "body-sm", classes: "font-body text-body-sm", sample: "Body small — the quick brown fox jumps over the lazy dog." },
+  { name: "caption", classes: "font-body text-caption", sample: "Caption — metadata and fine print." },
+  { name: "mono", classes: "font-mono text-mono uppercase", sample: "Mono label" },
+  { name: "mono-xs", classes: "font-mono text-mono-xs uppercase", sample: "Mono XS label" },
+];
+
+const statuses = [
+  { label: "SHIPPED", dotClass: "bg-accent-b" },
+  { label: "IN PROGRESS", dotClass: "bg-signal" },
+  { label: "CONCEPT", dotClass: "bg-ink-muted" },
+];
+
+const tags = ["ROBOTICS", "HARDWARE", "PYTHON"];
+---
+
+<BaseLayout title="Styleguide — RavensRobotics">
+  <main class="mx-auto max-w-[1200px] px-6 py-24">
+    <header class="mb-16 border-l border-hairline pl-8">
+      <h1 class="font-display text-display-lg uppercase text-ink">Styleguide</h1>
+      <p class="mt-4 max-w-2xl font-body text-body-lg text-ink-muted">
+        Every design token rendered for visual comparison against the source mockups.
+      </p>
+    </header>
+
+    <!-- 01. Colour palette -->
+    <section class="mb-20">
+      <h2 class="mb-8 font-display text-h2 uppercase text-ink">01 — Colour Palette</h2>
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        {
+          colors.map((c) => (
+            <div class="border border-hairline bg-surface p-4">
+              <div class={`mb-4 aspect-square w-full border border-hairline ${c.class}`} />
+              <div class="font-mono text-mono uppercase text-ink">{c.name}</div>
+              <div class="font-mono text-mono-xs text-ink-muted">{c.value}</div>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- 02. Border tiers -->
+    <section class="mb-20">
+      <h2 class="mb-8 font-display text-h2 uppercase text-ink">02 — Border Tiers</h2>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="border border-hairline bg-surface p-8">
+          <div class="font-mono text-mono uppercase text-ink">hairline</div>
+          <div class="mb-4 font-mono text-mono-xs text-ink-muted">rgba(232,234,237,0.08) — default border, everywhere</div>
+          <div class="flex h-24 items-center justify-center border border-hairline bg-surface-raised font-mono text-mono-xs uppercase text-ink-muted">
+            default edge
+          </div>
+        </div>
+        <div class="border border-hairline bg-surface p-8">
+          <div class="font-mono text-mono uppercase text-ink">hairline-bright</div>
+          <div class="mb-4 font-mono text-mono-xs text-ink-muted">rgba(232,234,237,0.20) — CAD corner brackets, deliberate accent edges</div>
+          <div class="relative flex h-24 items-center justify-center bg-surface-raised font-mono text-mono-xs uppercase text-ink-muted">
+            <span class="cad-bracket cad-bracket-tl"></span>
+            <span class="cad-bracket cad-bracket-br"></span>
+            corner accent
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03. Type scale -->
+    <section class="mb-20">
+      <h2 class="mb-8 font-display text-h2 uppercase text-ink">03 — Type Scale</h2>
+      <div class="flex flex-col gap-8 border border-hairline bg-surface p-10">
+        {
+          typeScale.map((t) => (
+            <div>
+              <div class="mb-2 flex justify-between font-mono text-mono-xs uppercase text-ink-muted">
+                <span>{t.name}</span>
+              </div>
+              <p class={`${t.classes} text-ink`}>{t.sample}</p>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- 04. Buttons -->
+    <section class="mb-20">
+      <h2 class="mb-8 font-display text-h2 uppercase text-ink">04 — Buttons</h2>
+      <div class="flex flex-wrap gap-4 border border-hairline bg-surface p-8">
+        <button class="bg-signal px-6 py-3 font-mono text-mono uppercase text-bg-void transition hover:brightness-110">
+          Solid Signal
+        </button>
+        <button class="gradient-border px-6 py-3 font-mono text-mono uppercase text-ink transition">
+          Outlined
+        </button>
+        <button class="border border-transparent px-6 py-3 font-mono text-mono uppercase text-ink-muted transition hover:border-hairline hover:text-ink">
+          Ghost
+        </button>
+      </div>
+    </section>
+
+    <!-- 05. Link states -->
+    <section class="mb-20">
+      <h2 class="mb-8 font-display text-h2 uppercase text-ink">05 — Link States</h2>
+      <p class="mb-6 max-w-2xl font-body text-body-sm text-ink-muted">
+        accent-a (#7C5CFF) fails WCAG AA as text (4.48:1 on bg-void), so links
+        never use it. Rest is ink-muted; hover is ink.
+      </p>
+      <div class="flex flex-wrap gap-x-12 gap-y-6 border border-hairline bg-surface p-8">
+        <div>
+          <div class="mb-2 font-mono text-mono-xs uppercase text-ink-muted">nav link — rest</div>
+          <a href="#" class="link-demo font-mono text-mono uppercase tracking-widest text-ink-muted">WORK</a>
+        </div>
+        <div>
+          <div class="mb-2 font-mono text-mono-xs uppercase text-ink-muted">nav link — hover</div>
+          <span class="font-mono text-mono uppercase tracking-widest text-ink">WORK</span>
+        </div>
+        <div>
+          <div class="mb-2 font-mono text-mono-xs uppercase text-ink-muted">footer link — rest</div>
+          <a href="#" class="link-demo font-mono text-mono uppercase tracking-widest text-ink-muted">GITHUB</a>
+        </div>
+        <div>
+          <div class="mb-2 font-mono text-mono-xs uppercase text-ink-muted">footer link — hover</div>
+          <span class="font-mono text-mono uppercase tracking-widest text-ink">GITHUB</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06. Status pills -->
+    <section class="mb-20">
+      <h2 class="mb-8 font-display text-h2 uppercase text-ink">06 — Status Pills</h2>
+      <p class="mb-6 max-w-2xl font-body text-body-sm text-ink-muted">
+        Card is surface; pills are surface-raised, so the elevation reads against the card.
+      </p>
+      <div class="flex flex-wrap items-center gap-4 border border-hairline bg-surface p-8">
+        {
+          statuses.map((s) => (
+            <div class="flex items-center gap-3 border border-hairline bg-surface-raised px-4 py-2">
+              <span class={`h-2 w-2 rounded-full ${s.dotClass} animate-pulse`} />
+              <span class="font-mono text-mono uppercase text-ink">{s.label}</span>
+            </div>
+          ))
+        }
+        <div class="flex items-center gap-3 border border-hairline bg-surface-raised px-4 py-2 opacity-60">
+          <span class="h-2 w-2 rounded-full border border-hairline" />
+          <span class="font-mono text-mono uppercase text-ink-muted">ARCHIVED</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07. Tag chips -->
+    <section class="mb-20">
+      <h2 class="mb-8 font-display text-h2 uppercase text-ink">07 — Tag Chips</h2>
+      <p class="mb-6 max-w-2xl font-body text-body-sm text-ink-muted">
+        Transparent fill — hairline border, ink-muted text. No fourth elevation step.
+      </p>
+      <div class="flex flex-wrap gap-2 border border-hairline bg-surface p-8">
+        {
+          tags.map((tag) => (
+            <span class="border border-hairline bg-transparent px-2 py-1 font-mono text-mono-xs uppercase text-ink-muted">
+              #{tag}
+            </span>
+          ))
+        }
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .link-demo {
+    transition: color 0.2s;
+  }
+  .link-demo:hover {
+    color: var(--color-ink);
+  }
+
+  .cad-bracket {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+    border-color: var(--color-hairline-bright);
+  }
+  .cad-bracket-tl {
+    top: 8px;
+    left: 8px;
+    border-top: 1px solid;
+    border-left: 1px solid;
+  }
+  .cad-bracket-br {
+    bottom: 8px;
+    right: 8px;
+    border-bottom: 1px solid;
+    border-right: 1px solid;
+  }
+</style>

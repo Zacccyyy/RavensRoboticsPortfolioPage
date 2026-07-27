@@ -1,0 +1,105 @@
+/* Design tokens for RavensRobotics — source of truth for colour, type, and radius.
+   Values are hand-specified (not copied from any mockup); see repo CLAUDE.md for provenance. */
+
+@import "@fontsource-variable/space-grotesk/wght.css";
+@import "@fontsource-variable/inter/wght.css";
+@import "@fontsource-variable/jetbrains-mono/wght.css";
+
+@theme {
+  /* Colours */
+  --color-bg-void: #0b0d0f;
+  --color-surface: #14181c;
+  --color-surface-raised: #1c2229;
+  --color-ink: #e8eaed;
+  --color-ink-muted: #8a939b;
+  /* accent-a is STRUCTURAL ONLY — focus rings, gradients, borders. It measures
+     4.48:1 against bg-void, which fails WCAG AA for text. Never use it as a
+     text colour (not for links, nav, or the footer wordmark); use ink-muted
+     at rest and ink on hover instead. */
+  --color-accent-a: #7c5cff;
+  --color-accent-b: #00e0c6;
+  --color-signal: #ff6b35;
+  --color-hairline: rgba(232, 234, 237, 0.08);
+  --color-hairline-bright: rgba(232, 234, 237, 0.2);
+  --color-grid-line: rgba(232, 234, 237, 0.04);
+
+  /* Font families. `--font-sans` overrides Tailwind's own default (used by
+     Preflight's base html font-family) so un-classed text still lands on
+     Inter instead of the system font stack. */
+  --font-sans: "Inter Variable", sans-serif;
+  --font-display: "Space Grotesk Variable", sans-serif;
+  --font-body: "Inter Variable", sans-serif;
+  --font-mono: "JetBrains Mono Variable", monospace;
+
+  /* Type scale: font-size paired with line-height / letter-spacing / weight,
+     so a single `text-*` utility applies the whole token. */
+  --text-display-xl: 80px;
+  --text-display-xl--line-height: 0.95;
+  --text-display-xl--letter-spacing: -0.04em;
+  --text-display-xl--font-weight: 700;
+
+  --text-display-lg: 48px;
+  --text-display-lg--line-height: 1.1;
+  --text-display-lg--letter-spacing: -0.04em;
+  --text-display-lg--font-weight: 700;
+
+  --text-h2: 32px;
+  --text-h2--line-height: 1.2;
+  --text-h2--letter-spacing: -0.02em;
+  --text-h2--font-weight: 600;
+
+  --text-h3: 24px;
+  --text-h3--line-height: 1.2;
+  --text-h3--letter-spacing: -0.02em;
+  --text-h3--font-weight: 600;
+
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 1.6;
+  --text-body-lg--font-weight: 400;
+
+  --text-body: 16px;
+  --text-body--line-height: 1.6;
+  --text-body--font-weight: 400;
+
+  --text-body-sm: 15px;
+  --text-body-sm--line-height: 1.6;
+  --text-body-sm--font-weight: 400;
+
+  --text-caption: 13px;
+  --text-caption--line-height: 1.5;
+  --text-caption--font-weight: 400;
+
+  --text-mono: 12px;
+  --text-mono--line-height: 1;
+  --text-mono--letter-spacing: 0.12em;
+  --text-mono--font-weight: 500;
+
+  --text-mono-xs: 10px;
+  --text-mono-xs--line-height: 1;
+  --text-mono-xs--letter-spacing: 0.08em;
+  --text-mono-xs--font-weight: 400;
+
+  /* Radius: 2px maximum everywhere. `full` is kept at 9999px because a fully
+     round dot/pill isn't "a rounded corner" in the sense the 2px rule targets —
+     see CLAUDE.md for the reasoning; flag it if you'd rather square those off too. */
+  --radius-xs: 2px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-2xl: 2px;
+  --radius-3xl: 2px;
+  --radius-full: 9999px;
+
+  /* No box-shadows anywhere: depth comes from surface elevation + hairlines only. */
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+
+  /* Layout. `--spacing-*` feeds padding/margin/gap utilities (px-margin-desktop,
+     gap-gutter, ...); `--container-*` feeds max-w-* (max-w-max-width). */
+  --spacing-margin-mobile: 20px;
+  --spacing-margin-desktop: 64px;
+  --spacing-gutter: 24px;
+  --container-max-width: 1440px;
+}
