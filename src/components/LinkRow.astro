@@ -1,0 +1,144 @@
+---
+// Renders whichever of links.{github,demo,docs} and downloads exist — never
+// an empty or dead button. Downloads is a real disclosure (WAI-ARIA APG
+// "Disclosure" pattern): aria-expanded on the trigger, Escape closes it,
+// clicking outside closes it, and focus returns to the trigger either way.
+// The old mockup version only opened on CSS :hover, so it had none of that.
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  links?: CollectionEntry<'projects'>['data']['links'];
+  downloads?: CollectionEntry<'projects'>['data']['downloads'];
+}
+
+const { links, downloads } = Astro.props;
+const hasDownloads = Boolean(downloads?.length);
+---
+
+{
+  (links?.github || links?.demo || links?.docs || hasDownloads) && (
+    <div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+      {links?.github && (
+        <a
+          href={links.github}
+          class="flex w-full items-center justify-center gap-3 border border-ink px-8 py-4 font-mono text-mono uppercase text-ink transition-colors hover:bg-ink hover:text-bg-void sm:w-auto"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M8 4 3 12l5 8M16 4l5 8-5 8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          View Source
+        </a>
+      )}
+      {links?.demo && (
+        <a
+          href={links.demo}
+          class="flex w-full items-center justify-center gap-3 bg-signal px-8 py-4 font-mono text-mono font-bold uppercase text-bg-void transition-[filter] hover:brightness-110 sm:w-auto"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M13 3 4 14h7l-1 7 9-11h-7l1-7Z" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Live Demo
+        </a>
+      )}
+      {links?.docs && (
+        <a
+          href={links.docs}
+          class="flex w-full items-center justify-center gap-3 border border-ink px-8 py-4 font-mono text-mono uppercase text-ink transition-colors hover:bg-ink hover:text-bg-void sm:w-auto"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M14 3v6h6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Docs
+        </a>
+      )}
+
+      {hasDownloads && (
+        <div class="relative w-full sm:w-auto" data-downloads>
+          <button
+            type="button"
+            data-downloads-trigger
+            aria-expanded="true"
+            aria-controls="downloads-panel"
+            class="flex w-full items-center justify-center gap-3 border border-transparent px-8 py-4 font-mono text-mono uppercase text-accent-b transition-colors hover:border-accent-b sm:w-auto"
+          >
+            Downloads
+            <svg
+              data-downloads-chevron
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+              class="transition-transform"
+            >
+              <path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <div
+            id="downloads-panel"
+            data-downloads-panel
+            class="absolute left-0 top-full z-20 mt-2 w-80 space-y-4 border border-hairline bg-surface-raised p-6 font-mono text-mono-xs shadow-2xl"
+          >
+            {downloads?.map((file, index) => (
+              <a
+                href={file.url}
+                download
+                class:list={[
+                  'flex items-center justify-between gap-4 pb-2 text-ink-muted transition-colors hover:text-ink',
+                  index < (downloads?.length ?? 0) - 1 && 'border-b border-hairline',
+                ]}
+              >
+                <span class="uppercase text-ink">{file.label}</span>
+                <span>{file.size}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+<script>
+  function initDownloadsDisclosures() {
+    document.querySelectorAll<HTMLElement>('[data-downloads]').forEach((root) => {
+      const trigger = root.querySelector<HTMLButtonElement>('[data-downloads-trigger]');
+      const panel = root.querySelector<HTMLElement>('[data-downloads-panel]');
+      const chevron = root.querySelector<SVGElement>('[data-downloads-chevron]');
+      if (!trigger || !panel) return;
+
+      // Progressive enhancement: the panel ships open in the server-rendered
+      // HTML (so downloads are reachable even if this script never runs),
+      // then gets collapsed here once JS is confirmed to be running.
+      const setOpen = (open: boolean) => {
+        trigger.setAttribute('aria-expanded', String(open));
+        panel.hidden = !open;
+        chevron?.style.setProperty('transform', open ? 'rotate(180deg)' : 'rotate(0deg)');
+      };
+
+      setOpen(false);
+
+      trigger.addEventListener('click', () => {
+        setOpen(trigger.getAttribute('aria-expanded') !== 'true');
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && trigger.getAttribute('aria-expanded') === 'true') {
+          setOpen(false);
+          trigger.focus();
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (trigger.getAttribute('aria-expanded') === 'true' && !root.contains(e.target as Node)) {
+          setOpen(false);
+        }
+      });
+    });
+  }
+
+  initDownloadsDisclosures();
+</script>

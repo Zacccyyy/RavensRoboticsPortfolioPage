@@ -48,7 +48,17 @@ const projects = defineCollection({
         .default([]),
 
       cover: image().optional(),
-      gallery: z.array(image()).optional(),
+      // Each item carries its own alt text — the gallery has no separate
+      // caption field, and the Lightbox needs a real per-image description
+      // to caption with, not a project-wide fallback repeated six times.
+      gallery: z
+        .array(
+          z.object({
+            src: image(),
+            alt: z.string(),
+          }),
+        )
+        .optional(),
 
       // `src` here is a plain string, not image() — video isn't a
       // supported asset type in Astro's content-layer pipeline, so this
@@ -82,6 +92,13 @@ const projects = defineCollection({
               src: z.string(),
               poster: image(),
               title: z.string(),
+              // "m:ss", e.g. "2:14" — authored, not probed from the file at
+              // build time. Keeps the schema self-contained (no ffprobe
+              // dependency for a template repo other people fork) and
+              // matches the existing precedent of downloads[].size, which
+              // is also human-provided metadata about a binary asset rather
+              // than something computed from it.
+              duration: z.string(),
               caption: z.string().optional(),
             }),
           ]),

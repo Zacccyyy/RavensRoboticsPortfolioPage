@@ -12,9 +12,12 @@ tags: ["hydroponics", "raspberry-pi", "esp32", "automation", "sensors"]
 accent: "#4FD97A"
 cover: "./cover.jpg"
 gallery:
-  - "./gallery/01-enclosure.jpg"
-  - "./gallery/02-sensor-array.jpg"
-  - "./gallery/03-dashboard.jpg"
+  - src: "./gallery/01-enclosure.jpg"
+    alt: "TERRAPOD's enclosure, closed and running, viewed from the front."
+  - src: "./gallery/02-sensor-array.jpg"
+    alt: "The ESP32 sensor mesh wired into TERRAPOD's reservoir and canopy."
+  - src: "./gallery/03-dashboard.jpg"
+    alt: "TERRAPOD's local dashboard, showing live environmental readings."
 preview:
   src: "/videos/terrapod/preview-loop.mp4"
   poster: "./preview-poster.svg"
@@ -23,7 +26,8 @@ videos:
     src: "/videos/terrapod/grow-cycle.mp4"
     poster: "./video-poster.svg"
     title: "One Grow Cycle, Timelapse"
-    caption: "Six weeks of automated lighting and irrigation compressed to ninety seconds."
+    duration: "0:05"
+    caption: "Automated lighting and irrigation across a full six-week grow cycle."
 links:
   github: "https://github.com/your-handle/terrapod"
 ---
@@ -38,8 +42,34 @@ reservoir EC and pH, grow lights follow a configurable photoperiod, and
 irrigation cycles adjust themselves against moisture readings rather than a
 fixed timer.
 
+## Hardware
+
+- Raspberry Pi 5, running the scheduler, dashboard, and vision pipeline.
+- ESP32, bridging a mesh of soil, air, and reservoir sensors over a
+  lightweight radio link.
+- A peristaltic pump rig for nutrient dosing, currently manual pending its
+  own controller.
+- Full-spectrum LED strips on a configurable photoperiod.
+
+> Reservoir dosing has been the long pole here. Everything else in the loop
+> reacts to a sensor reading in under a second; dosing has to react to a
+> *trend*, or it overshoots and the whole batch needs correcting.
+
 ## Current state
 
 Environmental monitoring, lighting, and irrigation are live and have been
 running unattended for several weeks. Reservoir dosing is next — nutrient
 concentration is currently manual pending a peristaltic pump controller.
+
+The irrigation loop itself is intentionally simple: read moisture, compare
+against a setpoint, and drive the pump through the same `pid-controller`
+library used for dosing.
+
+```c
+float error = setpoint - moisture_reading();
+float output = pid_update(&irrigation_loop, error, dt);
+pump_set_duty_cycle(clamp(output, 0.0f, 1.0f));
+```
+
+Once the dosing pump controller is wired in, it'll run the identical loop
+against EC and pH instead of moisture.

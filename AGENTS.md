@@ -36,11 +36,22 @@ that fills it.
   root; a file at the old `src/content/config.ts` path fails the build
   with a message telling you to move it.
 - Each project is a colocated folder:
-  `src/content/projects/<slug>/index.mdx`, with every asset that entry
-  references (`cover`, `gallery`, `preview.poster`, video posters) sitting
-  in that same `<slug>/` folder and referenced by relative path (e.g.
-  `./cover.jpg`). There is no separate `src/assets/projects/<slug>/` tree
-  — assets travel with the content file that uses them.
+  `src/content/projects/<slug>/index.mdx`, with every image asset that
+  entry references (`cover`, `gallery[].src`, `preview.poster`, video
+  posters) sitting in that same `<slug>/` folder and referenced by
+  relative path (e.g. `./cover.jpg`). There is no separate
+  `src/assets/projects/<slug>/` tree — assets travel with the content
+  file that uses them.
+- `gallery` is `{ src, alt }[]`, not a bare array of images. `alt` is
+  required per item and is what the Lightbox displays as that image's
+  caption — it needs to describe that specific photo, not repeat the
+  project's tagline six times.
+- Local `videos[]` entries require a `duration` field (`"m:ss"`, e.g.
+  `"2:14"`) — authored, not measured from the file, for the same reason
+  `downloads[].size` is authored rather than computed: it keeps the
+  schema dependency-free (no ffprobe) for anyone forking this repo.
+  `youtube`/`vimeo` entries don't need one — the platform's own player
+  shows its duration once opened.
 - Entries are `.mdx`, not `.md`, via `@astrojs/mdx` (configured in
   `astro.config.mjs`). Body content can drop into inline components —
   a mid-article image, an embedded video — rather than staying
@@ -60,6 +71,19 @@ that fills it.
   STEP files, zips — belongs on GitHub Releases and gets linked via
   `downloads[].url` instead. The rule is the file's size and type, not
   "downloads go here, videos go there" as a directory convention.
+- `npm run build` runs `scripts/check-video-sizes.mjs` first, which warns
+  (doesn't fail the build) if any `preview.src` exceeds 500KB or any
+  `videos[].src` exceeds 5MB, printing the offending file and an `ffmpeg`
+  command to re-encode it. Run it on its own with `npm run check:videos`.
+  Local video should have a WebM alongside the MP4 (see `VideoEmbed.astro`)
+  — re-encode both when a file trips this warning.
+- `videos[].provider: 'vimeo'` is implemented in `VideoEmbed.astro`
+  (`lite-vimeo-embed`, same lazy-loading treatment as the YouTube branch)
+  and was manually verified during development, but no committed project
+  currently has a vimeo entry — the YouTube and local branches are the
+  only ones exercised by real content. Re-test the vimeo branch by hand
+  before relying on it when this repo is prepared as a fork-friendly
+  template.
 
 ## Pages & navigation
 

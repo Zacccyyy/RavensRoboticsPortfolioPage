@@ -1,0 +1,88 @@
+---
+// Two very different kinds of embed, one outer shell:
+//   youtube/vimeo -> a lite-embed facade (thumbnail + play button only).
+//                    Zero player JS, zero iframe, loads until clicked.
+//   local         -> a real <video> with poster + controls, MP4 and WebM
+//                    sources so the browser picks whichever it decodes
+//                    smaller.
+//
+// Custom element JS is loaded conditionally, per-provider, at the bottom of
+// this file — see the <script> block. lite-youtube's CSS is imported here
+// instead, statically: a dynamic import() of a CSS-only module produced a
+// broken build (Vite emitted a preload hint for a chunk it never actually
+// wrote to disk — a 404 on every page with a youtube video). A static
+// import bundles it into the page's regular stylesheet, which is reliable;
+// the cost is this ~1KB of CSS loads on any page with a video at all, not
+// only youtube ones, which is a fine trade against a 404.
+import 'lite-youtube-embed/src/lite-yt-embed.css';
+import type { CollectionEntry } from 'astro:content';
+
+type Video = NonNullable<CollectionEntry<'projects'>['data']['videos']>[number];
+
+interface Props {
+  video: Video;
+}
+
+const { video } = Astro.props;
+
+const webmSrc = video.provider === 'local' ? video.src.replace(/\.mp4$/, '.webm') : undefined;
+---
+
+<div class="video-embed border border-hairline bg-black">
+  {
+    video.provider === 'local' ? (
+      <video class="aspect-video w-full" poster={video.poster.src} controls preload="metadata">
+        {webmSrc && <source src={webmSrc} type="video/webm" />}
+        <source src={video.src} type="video/mp4" />
+      </video>
+    ) : video.provider === 'youtube' ? (
+      <lite-youtube videoid={video.id} playlabel={video.title} />
+    ) : (
+      <lite-vimeo videoid={video.id} />
+    )
+  }
+</div>
+<p class="mt-4 font-mono text-mono-xs uppercase tracking-widest text-ink-muted">
+  <span class="text-ink">{video.title}</span>
+  {video.provider === 'local' && <> &middot; {video.duration}</>}
+</p>
+{
+  video.provider === 'local' && video.caption && (
+    <p class="mt-1 font-body text-body-sm text-ink-muted">{video.caption}</p>
+  )
+}
+
+<script>
+  // Dynamic, not static, imports: a page with only local/vimeo videos
+  // shouldn't pay to download the youtube facade's JS, and vice versa —
+  // only whichever provider actually has a matching element on this page
+  // gets fetched.
+  async function registerNeededEmbeds() {
+    const tasks: Promise<unknown>[] = [];
+    if (document.querySelector('lite-youtube')) {
+      tasks.push(import('lite-youtube-embed'));
+    }
+    if (document.querySelector('lite-vimeo')) {
+      tasks.push(import('lite-vimeo-embed'));
+    }
+    await Promise.all(tasks);
+  }
+
+  registerNeededEmbeds();
+</script>
+
+<style>
+  /* lite-youtube ships with a 720px max-width meant for blog-post embeds;
+     we want it to fill whatever width the layout gives it. lite-vimeo has
+     no such cap. */
+  .video-embed :global(lite-youtube) {
+    max-width: none;
+    width: 100%;
+  }
+
+  /* Round corners are a 2px-max system (see tokens.css) — lite-vimeo's
+     default play button uses a much larger radius than that. */
+  .video-embed :global(.ltv-playbtn) {
+    border-radius: var(--radius-md);
+  }
+</style>

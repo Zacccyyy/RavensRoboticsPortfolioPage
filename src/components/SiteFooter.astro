@@ -1,0 +1,31 @@
+---
+import siteConfig from '../../site.config';
+
+const currentYear = new Date().getFullYear();
+const copyrightYears =
+  siteConfig.foundedYear === currentYear
+    ? `${currentYear}`
+    : `${siteConfig.foundedYear}–${currentYear}`;
+---
+
+<footer class="w-full border-t border-hairline bg-surface py-12">
+  <div class="mx-auto flex max-w-max-width flex-col items-center justify-between gap-8 px-margin-mobile md:flex-row md:px-margin-desktop">
+    <div class="flex flex-col items-center gap-4 md:items-start">
+      <div class="font-display text-h3 font-bold uppercase tracking-tighter text-ink">
+        {siteConfig.name}
+      </div>
+      <div class="flex gap-4 font-mono text-mono uppercase">
+        {
+          siteConfig.social.map((link) => (
+            <a href={link.url} class="text-ink-muted transition-colors hover:text-ink">
+              {link.label}
+            </a>
+          ))
+        }
+      </div>
+    </div>
+    <div class="font-mono text-mono uppercase text-ink-muted opacity-60">
+      &copy; {copyrightYears} {siteConfig.copyrightHolder}
+    </div>
+  </div>
+</footer>

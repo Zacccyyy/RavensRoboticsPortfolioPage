@@ -1,0 +1,88 @@
+---
+// Bento-style grid (first image large, rest uniform) — every tile is a real
+// <Image>/<Picture>, never a CSS background, so alt text, lazy loading, and
+// format conversion all actually apply. Each tile is a real <a> pointing at
+// a larger rendition of the same image for graceful degradation without JS;
+// Lightbox.astro (rendered once, separately, by the page) intercepts clicks
+// on these to open the PhotoSwipe overlay instead.
+
+import { Image, Picture, getImage } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+
+type GalleryImage = NonNullable<CollectionEntry<'projects'>['data']['gallery']>[number];
+
+interface Props {
+  images: GalleryImage[];
+}
+
+const { images } = Astro.props;
+
+const items = await Promise.all(
+  images.map(async (item) => {
+    const isVector = item.src.format === 'svg';
+    const full = isVector
+      ? { src: item.src.src, width: item.src.width, height: item.src.height }
+      : await getImage({ src: item.src, format: 'webp', width: 1920 });
+    return {
+      ...item,
+      isVector,
+      fullSrc: full.src,
+      fullWidth: 'attributes' in full ? full.attributes.width : full.width,
+      fullHeight: 'attributes' in full ? full.attributes.height : full.height,
+    };
+  }),
+);
+---
+
+<div id="project-gallery" class="grid grid-cols-2 gap-gutter md:grid-cols-4 md:auto-rows-[220px]">
+  {
+    items.map((item, index) => (
+      <a
+        href={item.fullSrc}
+        data-pswp-width={item.fullWidth}
+        data-pswp-height={item.fullHeight}
+        data-pswp-caption={item.alt}
+        class:list={[
+          'group relative block overflow-hidden border border-hairline bg-surface-raised aspect-square md:aspect-auto',
+          // Wide, not tall: a col+row span hero tile leaves a guaranteed
+          // gap under it whenever the remaining image count doesn't divide
+          // evenly into the rest of that row-pair (3 images is exactly
+          // this case — 1 hero + 2 singles fills row one, leaves row two
+          // completely empty under the singles). Row-span-1 keeps every
+          // tile in the same row track, so the grid just wraps normally
+          // with no leftover gap, regardless of how many images there are.
+          index === 0 && images.length > 1 && 'md:col-span-2',
+        ]}
+      >
+        {item.isVector ? (
+          <Image
+            src={item.src}
+            alt={item.alt}
+            format="svg"
+            loading="lazy"
+            class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        ) : (
+          <Picture
+            src={item.src}
+            alt={item.alt}
+            formats={['avif', 'webp']}
+            widths={[400, 800, 1200]}
+            sizes="(min-width: 768px) 25vw, 50vw"
+            fit="cover"
+            loading="lazy"
+            class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        )}
+        <span
+          aria-hidden="true"
+          class="absolute right-3 top-3 border border-hairline bg-bg-void/80 p-1.5 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-ink">
+            <path d="M9 3H3v6M15 3h6v6M21 15v6h-6M3 15v6h6" stroke-linecap="square" />
+          </svg>
+        </span>
+      </a>
+    ))
+  }
+</div>

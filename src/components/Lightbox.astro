@@ -1,0 +1,87 @@
+---
+// PhotoSwipe 5, wired to #project-gallery (rendered by Gallery.astro). No
+// props — [slug].astro only renders this component at all when the project
+// has a gallery, so pages without one never ship any of this JS or CSS.
+// The core PhotoSwipe module (the expensive part) is only fetched via
+// pswpModule when a slide is actually opened — PhotoSwipeLightbox itself
+// is the only piece that loads upfront.
+---
+
+<script>
+  import PhotoSwipeLightbox from 'photoswipe/lightbox';
+  import 'photoswipe/style.css';
+
+  const galleryEl = document.querySelector('#project-gallery');
+  if (galleryEl) {
+    const lightbox = new PhotoSwipeLightbox({
+      gallery: '#project-gallery',
+      children: 'a',
+      pswpModule: () => import('photoswipe'),
+    });
+
+    // PhotoSwipe has no built-in caption UI — this is the library's own
+    // documented "custom caption" recipe, reading from the data-pswp-caption
+    // attribute Gallery.astro sets from each image's real alt text.
+    lightbox.on('uiRegister', () => {
+      lightbox.pswp?.ui?.registerElement({
+        name: 'caption',
+        order: 9,
+        isButton: false,
+        appendTo: 'root',
+        onInit: (el, pswp) => {
+          el.className = 'pswp__custom-caption';
+          pswp.on('change', () => {
+            const triggerEl = pswp.currSlide?.data.element;
+            el.textContent = triggerEl?.getAttribute('data-pswp-caption') ?? '';
+          });
+        },
+      });
+    });
+
+    lightbox.init();
+  }
+</script>
+
+<style is:global>
+  /* Reskin to the site's tokens — restrained, near-black field, minimal
+     chrome, matching the lightbox mockup's own restraint rather than
+     PhotoSwipe's default light-icon-on-black-with-no-grid look. */
+  .pswp {
+    --pswp-bg: rgba(11, 13, 15, 0.97);
+    --pswp-icon-color: var(--color-ink);
+    --pswp-icon-color-secondary: var(--color-ink-muted);
+    --pswp-icon-stroke-color: var(--color-ink-muted);
+  }
+
+  .pswp__bg {
+    background-image:
+      linear-gradient(to right, var(--color-grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--color-grid-line) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .pswp__counter {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    letter-spacing: var(--text-mono--letter-spacing);
+    text-transform: uppercase;
+  }
+
+  .pswp__button {
+    border-radius: 0;
+  }
+
+  .pswp__custom-caption {
+    position: absolute;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 40rem;
+    width: calc(100% - 4rem);
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: var(--text-body-sm);
+    color: var(--color-ink-muted);
+    pointer-events: none;
+  }
+</style>

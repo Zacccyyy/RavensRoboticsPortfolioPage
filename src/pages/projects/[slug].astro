@@ -1,0 +1,170 @@
+---
+import { getCollection, render } from 'astro:content';
+import { Image, Picture } from 'astro:assets';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import StatusPill from '../../components/StatusPill.astro';
+import LinkRow from '../../components/LinkRow.astro';
+import VideoEmbed from '../../components/VideoEmbed.astro';
+import Gallery from '../../components/Gallery.astro';
+import Lightbox from '../../components/Lightbox.astro';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map((project) => ({
+    params: { slug: project.data.slug },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props;
+const { data } = project;
+const { Content } = await render(project);
+
+const isVectorCover = data.cover?.format === 'svg';
+const hasGallery = Boolean(data.gallery?.length);
+const hasVideos = Boolean(data.videos?.length);
+
+const coverAlt = `${data.title} — ${data.tagline}`;
+
+const dateLabel = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' })
+  .format(data.date)
+  .toUpperCase();
+---
+
+<BaseLayout title={`${data.title} — ${data.tagline}`} description={data.summary}>
+  <SiteHeader />
+
+  <main class="pb-24 pt-32">
+    <!-- Back link -->
+    <div class="mx-auto max-w-max-width px-margin-mobile py-4 md:px-margin-desktop">
+      <a
+        href="/#work"
+        class="group inline-flex items-center gap-2 font-mono text-mono-xs uppercase tracking-widest text-ink-muted transition-colors hover:text-ink"
+      >
+        <span class="transition-transform group-hover:-translate-x-1">&larr;</span>
+        All Projects
+      </a>
+    </div>
+
+    <!-- Hero -->
+    {
+      data.cover ? (
+        <section class="relative aspect-[21/9] max-h-[70vh] min-h-[320px] w-full overflow-hidden border-y border-hairline">
+          {isVectorCover ? (
+            <Image
+              src={data.cover}
+              alt={coverAlt}
+              format="svg"
+              loading="eager"
+              fetchpriority="high"
+              class="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            <Picture
+              src={data.cover}
+              alt={coverAlt}
+              formats={['avif', 'webp']}
+              widths={[640, 1024, 1600, 2200]}
+              sizes="100vw"
+              fit="cover"
+              loading="eager"
+              fetchpriority="high"
+              class="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
+          <div class="absolute inset-0 bg-gradient-to-t from-bg-void via-transparent to-transparent" />
+          <div class="absolute bottom-0 left-0 w-full px-margin-mobile pb-8 md:px-margin-desktop md:pb-12">
+            <div class="mx-auto max-w-max-width">
+              <div class="mb-4">
+                <StatusPill status={data.status} />
+              </div>
+              <h1 class="mb-4 font-display text-display-lg uppercase leading-none text-ink md:text-display-xl">
+                {data.title}
+              </h1>
+              <p class="max-w-2xl border-l border-accent-a py-1 pl-6 font-body text-body-lg text-ink-muted">
+                {data.tagline}
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section class="border-y border-hairline bg-surface px-margin-mobile py-16 md:px-margin-desktop md:py-24">
+          <div class="mx-auto max-w-max-width">
+            <div class="mb-4">
+              <StatusPill status={data.status} />
+            </div>
+            <h1 class="mb-4 font-display text-display-lg uppercase leading-none text-ink md:text-display-xl">
+              {data.title}
+            </h1>
+            <p class="max-w-2xl border-l border-accent-a py-1 pl-6 font-body text-body-lg text-ink-muted">
+              {data.tagline}
+            </p>
+          </div>
+        </section>
+      )
+    }
+
+    <!-- Metadata bar -->
+    <section class="border-b border-hairline bg-surface-container-lowest bg-surface">
+      <div class="mx-auto flex max-w-max-width flex-wrap items-center gap-x-8 gap-y-4 px-margin-mobile py-6 md:px-margin-desktop">
+        <div class="flex items-center gap-8">
+          <span class="font-mono text-mono-xs uppercase tracking-widest text-ink">{data.category}</span>
+          <span class="h-4 w-px bg-hairline" />
+          <span class="font-mono text-mono-xs uppercase tracking-widest text-ink">{dateLabel}</span>
+        </div>
+        {data.tags.length > 0 && (
+          <div class="flex flex-wrap gap-4">
+            {data.tags.map((tag) => (
+              <span class="font-mono text-mono-xs uppercase tracking-widest text-accent-b">#{tag}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+
+    <!-- Links -->
+    <section class="mx-auto max-w-max-width px-margin-mobile py-12 md:px-margin-desktop">
+      <LinkRow links={data.links} downloads={data.downloads} />
+    </section>
+
+    <!-- Article body -->
+    <section class="mx-auto max-w-max-width px-margin-mobile py-4 md:px-margin-desktop">
+      <div class="prose mx-auto">
+        <Content />
+      </div>
+    </section>
+
+    <!-- Videos -->
+    {hasVideos && (
+      <section class="mx-auto max-w-max-width px-margin-mobile py-20 md:px-margin-desktop">
+        <div class="mb-12 flex items-end justify-between">
+          <h2 class="font-display text-h2 uppercase text-ink">Field Notes</h2>
+        </div>
+        <div class="flex flex-col gap-16">
+          {data.videos!.map((video) => (
+            <VideoEmbed video={video} />
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- Gallery -->
+    {hasGallery && (
+      <section class="mx-auto max-w-max-width border-t border-hairline px-margin-mobile py-20 md:px-margin-desktop">
+        <div class="mb-12 flex items-end justify-between">
+          <h2 class="font-display text-h2 uppercase text-ink">Gallery</h2>
+          <span class="font-mono text-mono-xs uppercase text-ink-muted">
+            {String(data.gallery!.length).padStart(2, '0')} Images
+          </span>
+        </div>
+        <Gallery images={data.gallery!} />
+      </section>
+    )}
+  </main>
+
+  <SiteFooter />
+
+  {hasGallery && <Lightbox />}
+</BaseLayout>
