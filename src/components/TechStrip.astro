@@ -1,0 +1,30 @@
+---
+// Renders `tags` (the real schema field) uppercase, middot-separated. There is
+// no separate telemetry field — this must never render anything that isn't in
+// the array it's handed.
+
+interface Props {
+  tags: string[];
+  class?: string;
+}
+
+const { tags, class: className } = Astro.props;
+---
+
+{
+  tags.length > 0 && (
+    <div
+      class:list={[
+        'flex flex-wrap items-center gap-2 border-t border-hairline px-6 py-4 font-mono text-mono-xs uppercase text-ink-muted transition-colors duration-300 group-hover:text-ink',
+        className,
+      ]}
+    >
+      {tags.map((tag, i) => (
+        <>
+          <span>{tag}</span>
+          {i < tags.length - 1 && <span aria-hidden="true">&middot;</span>}
+        </>
+      ))}
+    </div>
+  )
+}

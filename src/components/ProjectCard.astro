@@ -1,0 +1,162 @@
+---
+// One component, four layouts, branching purely on what content the entry
+// actually has — never on a hardcoded per-project list:
+//   cover + videos  -> media card, "VIDEO" badge
+//   cover + gallery -> media card, "N IMAGES" badge
+//   cover only      -> plain media card, no badge
+//   no cover        -> typography-forward card (see PID CONTROLLER)
+//
+// `eager` should be true only for cards above the fold (CardGrid passes it
+// for the first two) so the rest lazy-load.
+
+import type { CollectionEntry } from 'astro:content';
+import { Image, Picture } from 'astro:assets';
+import StatusPill from './StatusPill.astro';
+import TechStrip from './TechStrip.astro';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  eager?: boolean;
+  class?: string;
+}
+
+const { project, eager = false, class: className } = Astro.props;
+const { data } = project;
+
+type Variant = 'video' | 'gallery' | 'image' | 'text';
+
+const hasCover = Boolean(data.cover);
+const hasVideos = Boolean(data.videos?.length);
+const hasGallery = Boolean(data.gallery?.length);
+const hasPreview = Boolean(data.preview);
+
+const variant: Variant = !hasCover ? 'text' : hasVideos ? 'video' : hasGallery ? 'gallery' : 'image';
+
+const galleryCount = data.gallery?.length ?? 0;
+const galleryLabel = `${galleryCount} ${galleryCount === 1 ? 'IMAGE' : 'IMAGES'}`;
+
+const href = `/projects/${data.slug}/`;
+const coverAlt = `${data.title} — ${data.tagline}`;
+
+// Vector covers (this repo's SVG placeholders) can't be rasterized into
+// AVIF/WebP variants — sharp has SVG processing disabled by default, and
+// there's nothing to gain from raster-converting a vector anyway. Pass
+// those through unchanged; only raster sources go through the multi-format
+// Picture pipeline this task asked for.
+const isVectorCover = data.cover?.format === 'svg';
+
+// Rough share of a 3-column desktop grid each cardSize occupies — see
+// CardGrid.astro's span map. Keeps the browser from fetching a desktop-width
+// image for a card rendered at a third of that width.
+const SIZES: Record<typeof data.cardSize, string> = {
+  lg: '(min-width: 768px) 62vw, 100vw',
+  md: '(min-width: 768px) 31vw, 100vw',
+  sm: '(min-width: 768px) 31vw, 100vw',
+};
+
+const TITLE_CLASS: Record<typeof data.cardSize, string> = {
+  lg: 'text-h2',
+  md: 'text-h3',
+  sm: 'text-h3',
+};
+---
+
+<article class:list={['h-full', className]}>
+  <a
+    href={href}
+    class="gradient-border group relative flex h-full flex-col outline-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-a"
+  >
+    {
+      variant === 'text' ? (
+        <div class="flex flex-1 flex-col p-6 sm:p-8">
+          <div class="mb-6 flex items-center justify-between gap-4">
+            <StatusPill status={data.status} />
+            <span class="font-mono text-mono-xs uppercase tracking-widest text-ink-muted">
+              {data.category}
+            </span>
+          </div>
+          <div class="flex flex-1 flex-col justify-center">
+            <h3 class:list={['mb-4 font-display uppercase text-ink', TITLE_CLASS[data.cardSize]]}>
+              {data.title}
+            </h3>
+            <p class="max-w-[42ch] font-body text-body-sm text-ink-muted">{data.summary}</p>
+          </div>
+        </div>
+      ) : (
+        <div class="flex flex-col gap-3 p-6 pb-4">
+          <div class="flex items-center justify-between gap-4">
+            <StatusPill status={data.status} />
+            {variant === 'video' && (
+              <span class="border border-hairline bg-transparent px-2 py-1 font-mono text-mono-xs uppercase text-ink-muted">
+                Video
+              </span>
+            )}
+            {variant === 'gallery' && (
+              <span class="border border-hairline bg-transparent px-2 py-1 font-mono text-mono-xs uppercase text-ink-muted">
+                {galleryLabel}
+              </span>
+            )}
+          </div>
+          <h3 class:list={['font-display uppercase text-ink', TITLE_CLASS[data.cardSize]]}>
+            {data.title}
+          </h3>
+          {data.cardSize === 'lg' && (
+            <p class="max-w-md font-body text-body-sm text-ink-muted">{data.tagline}</p>
+          )}
+        </div>
+      )
+    }
+
+    {
+      variant !== 'text' && data.cover && (
+        // flex-auto (not flex-1) + aspect-ratio: on desktop the grid row has
+        // a definite height, so this still grows flush to the tech strip.
+        // On mobile there's no fixed row height, and the <img> inside is
+        // absolutely positioned (zero intrinsic size) — without a real
+        // basis, flex-1 has nothing to grow from and the image collapses to
+        // 0px. aspect-ratio gives it a real basis in both cases.
+        <div class="relative min-h-0 flex-auto aspect-[4/3] overflow-hidden border-t border-hairline bg-surface-raised">
+          {isVectorCover ? (
+            <Image
+              src={data.cover}
+              alt={coverAlt}
+              format="svg"
+              loading={eager ? 'eager' : 'lazy'}
+              fetchpriority={eager ? 'high' : 'auto'}
+              class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            />
+          ) : (
+            <Picture
+              src={data.cover}
+              alt={coverAlt}
+              formats={['avif', 'webp']}
+              widths={[480, 768, 1200, 1600]}
+              sizes={SIZES[data.cardSize]}
+              fit="cover"
+              loading={eager ? 'eager' : 'lazy'}
+              fetchpriority={eager ? 'high' : 'auto'}
+              class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            />
+          )}
+          {hasPreview && data.preview && (
+            <video
+              class="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+              poster={data.preview.poster.src}
+              muted
+              loop
+              playsinline
+              autoplay
+              preload="none"
+              aria-hidden="true"
+              tabindex="-1"
+            >
+              <source src={data.preview.src} type="video/mp4" />
+            </video>
+          )}
+        </div>
+      )
+    }
+
+    <TechStrip tags={data.tags} />
+  </a>
+</article>

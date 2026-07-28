@@ -7,9 +7,9 @@ import { glob } from 'astro/loaders';
 // build failing loudly when a content file drifts from them.
 // ---------------------------------------------------------------------------
 
-const STATUSES = ['shipped', 'in-progress', 'concept', 'archived'] as const;
-const CATEGORIES = ['software', 'hardware', 'robotics', 'build'] as const;
-const CARD_SIZES = ['sm', 'md', 'lg'] as const;
+export const STATUSES = ['shipped', 'in-progress', 'concept', 'archived'] as const;
+export const CATEGORIES = ['software', 'hardware', 'robotics', 'build'] as const;
+export const CARD_SIZES = ['sm', 'md', 'lg'] as const;
 
 /**
  * Produces a plain-English error for an invalid/missing enum value, naming
@@ -50,6 +50,11 @@ const projects = defineCollection({
       cover: image().optional(),
       gallery: z.array(image()).optional(),
 
+      // `src` here is a plain string, not image() — video isn't a
+      // supported asset type in Astro's content-layer pipeline, so this
+      // never gets resolved to a built path. It must be an absolute
+      // /videos/<slug>/<file>.mp4 path served from public/, not a
+      // relative one. See "Content collections" in AGENTS.md.
       preview: z
         .object({
           src: z.string(),
@@ -72,6 +77,8 @@ const projects = defineCollection({
             }),
             z.object({
               provider: z.literal('local'),
+              // Same rule as preview.src above: absolute /videos/... path
+              // served from public/, not a relative one.
               src: z.string(),
               poster: image(),
               title: z.string(),

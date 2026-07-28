@@ -1,0 +1,24 @@
+---
+// A small filter/category chip. Presentational only in this pass — there is
+// no client-side JS yet, so `active` is a static prop, not live filter state.
+// Wiring these up to actually filter the grid is a later pass.
+
+interface Props {
+  label: string;
+  active?: boolean;
+}
+
+const { label, active = false } = Astro.props;
+---
+
+<button
+  type="button"
+  class:list={[
+    'whitespace-nowrap border px-4 py-2 font-mono text-mono uppercase tracking-widest transition-colors',
+    active
+      ? 'border-signal bg-signal text-bg-void'
+      : 'border-hairline text-ink-muted hover:border-hairline-bright hover:text-ink',
+  ]}
+>
+  {label}
+</button>

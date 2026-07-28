@@ -45,10 +45,36 @@ that fills it.
   `astro.config.mjs`). Body content can drop into inline components —
   a mid-article image, an embedded video — rather than staying
   plain-markdown-only.
-- `downloads[].url` should normally point at an external host (GitHub
-  Releases is the default choice) rather than into `public/`. `public/`
-  is reserved for small, text-format files (a BOM CSV, a pinout table) —
-  not binaries or anything of meaningful size.
+- `preview.src` and local `videos[].src` are plain strings, **not**
+  `image()`-resolved — Astro's content-layer asset pipeline only
+  transforms fields wrapped in `image()`, and video isn't a supported
+  asset type there. A relative path (`./clip.mp4`) will silently 404 in
+  the browser, because it never gets rewritten to a real built path the
+  way `cover`/`gallery`/poster fields do. These fields must be an
+  absolute path served from `public/`: `public/videos/<slug>/<file>.mp4`,
+  referenced in frontmatter as `/videos/<slug>/<file>.mp4`.
+- `public/` in general is for anything that must be served verbatim at a
+  stable, predictable path: video clips under ~5MB (the video src case
+  above) and small text-format downloads (a BOM CSV, a pinout table).
+  Anything larger, or anything binary and sizeable — firmware builds,
+  STEP files, zips — belongs on GitHub Releases and gets linked via
+  `downloads[].url` instead. The rule is the file's size and type, not
+  "downloads go here, videos go there" as a directory convention.
+
+## Pages & navigation
+
+- `/` — home (`src/pages/index.astro`): hero, filter chips, project grid,
+  footer.
+- `/styleguide` — design token reference.
+- `/projects/<slug>/` — project detail route. Cards already link here
+  (`ProjectCard.astro`) even though the route isn't built yet.
+- The nav deliberately has no ABOUT or CONTACT link — neither page exists
+  yet, and a dead link is worse than an absent one. "WORK" in the nav is
+  a same-page anchor (`#work`) down to the grid section, not a route, so
+  it doesn't need to match the `/projects/` URL it links into. Add an
+  About page when this repo gets prepared as a fork-friendly template —
+  the bio/social copy already lives in `site.config.ts`, so it's mostly
+  a layout job at that point, not a content one.
 
 ## Design tokens
 

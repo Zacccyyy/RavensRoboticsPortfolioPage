@@ -1,11 +1,99 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CardGrid from '../components/CardGrid.astro';
+import TagChip from '../components/TagChip.astro';
+import { CATEGORIES } from '../content.config';
+import siteConfig from '../../site.config';
+
+const projects = (await getCollection('projects')).sort(
+  (a, b) => Number(b.data.featured) - Number(a.data.featured) || b.data.date.valueOf() - a.data.date.valueOf(),
+);
+
+const currentYear = new Date().getFullYear();
+const copyrightYears =
+  siteConfig.foundedYear === currentYear
+    ? `${currentYear}`
+    : `${siteConfig.foundedYear}–${currentYear}`;
 ---
 
-<BaseLayout title="RavensRobotics">
-  <main class="flex min-h-screen items-center justify-center px-6">
-    <p class="font-mono text-mono uppercase text-ink-muted tracking-widest">
-      RavensRobotics — under construction
-    </p>
+<BaseLayout title={siteConfig.seo.title} description={siteConfig.seo.description}>
+  <!-- Nav -->
+  <header class="fixed top-0 z-50 w-full border-b border-hairline bg-bg-void/80 backdrop-blur-md">
+    <div class="mx-auto flex h-16 max-w-max-width items-center justify-between px-margin-mobile md:px-margin-desktop">
+      <a href="/" class="font-display text-h3 font-bold uppercase tracking-tighter text-ink">
+        {siteConfig.name}
+      </a>
+      <nav class="hidden items-center gap-8 md:flex">
+        <a
+          href="#work"
+          class="font-mono text-mono uppercase tracking-widest text-ink-muted transition-colors hover:text-ink"
+        >
+          Work
+        </a>
+        {
+          siteConfig.social.map((link) => (
+            <a
+              href={link.url}
+              class="font-mono text-mono uppercase tracking-widest text-ink-muted transition-colors hover:text-ink"
+            >
+              {link.label}
+            </a>
+          ))
+        }
+      </nav>
+    </div>
+  </header>
+
+  <main class="pb-24 pt-32">
+    <!-- Hero -->
+    <section class="relative mx-auto mb-24 max-w-max-width px-margin-mobile md:px-margin-desktop">
+      <div class="max-w-4xl">
+        <h1 class="mb-8 font-display text-display-lg uppercase text-ink md:text-display-xl">
+          {siteConfig.tagline}
+        </h1>
+        <p class="max-w-xl font-body text-body-lg text-ink-muted">
+          {siteConfig.bio}
+        </p>
+      </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="mx-auto mb-12 max-w-max-width px-margin-mobile md:px-margin-desktop">
+      <h2 class="sr-only">Filter by category</h2>
+      <div class="flex flex-wrap gap-3">
+        <TagChip label="All" active />
+        {CATEGORIES.map((category) => <TagChip label={category} />)}
+      </div>
+    </section>
+
+    <!-- Grid -->
+    <section id="work" class="mx-auto max-w-max-width scroll-mt-24 px-margin-mobile md:px-margin-desktop">
+      <h2 class="sr-only">Selected work</h2>
+      <CardGrid projects={projects} />
+    </section>
   </main>
+
+  <!-- Footer -->
+  <footer class="w-full border-t border-hairline bg-surface py-12">
+    <div class="mx-auto flex max-w-max-width flex-col items-center justify-between gap-8 px-margin-mobile md:flex-row md:px-margin-desktop">
+      <div class="flex flex-col items-center gap-4 md:items-start">
+        <div class="font-display text-h3 font-bold uppercase tracking-tighter text-ink">
+          {siteConfig.name}
+        </div>
+        <div class="flex gap-4 font-mono text-mono uppercase">
+          {
+            siteConfig.social.map((link) => (
+              <a href={link.url} class="text-ink-muted transition-colors hover:text-ink">
+                {link.label}
+              </a>
+            ))
+          }
+        </div>
+      </div>
+      <div class="font-mono text-mono uppercase text-ink-muted opacity-60">
+        &copy; {copyrightYears} {siteConfig.copyrightHolder}
+      </div>
+    </div>
+  </footer>
 </BaseLayout>

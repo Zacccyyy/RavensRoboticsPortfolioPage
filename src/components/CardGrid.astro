@@ -1,0 +1,36 @@
+---
+// Asymmetric bento grid. Span is driven entirely by each entry's `cardSize`
+// — no per-project overrides — so a fork with a different project mix still
+// tiles sensibly instead of collapsing into a uniform grid.
+//
+// Deliberately NOT `grid-auto-flow: dense`: dense packing can reorder cards
+// visually away from DOM order, which desyncs keyboard tab order from what's
+// on screen. With this project's actual span mix (two 2x2s, two 1x2s, one
+// 1x1) sparse flow already tiles with no internal gaps — only the expected
+// trailing partial row when the count doesn't divide evenly into 3 columns.
+// If a future content mix does leave an avoidable gap, `dense` is a one-line
+// opt-in trade (visual polish for tab-order fidelity) rather than a default.
+
+import type { CollectionEntry } from 'astro:content';
+import ProjectCard from './ProjectCard.astro';
+
+interface Props {
+  projects: CollectionEntry<'projects'>[];
+}
+
+const { projects } = Astro.props;
+
+const SPAN: Record<CollectionEntry<'projects'>['data']['cardSize'], string> = {
+  lg: 'md:col-span-2 md:row-span-2',
+  md: 'md:col-span-1 md:row-span-2',
+  sm: 'md:col-span-1 md:row-span-1',
+};
+---
+
+<div class="grid grid-cols-1 gap-gutter md:grid-cols-3 md:auto-rows-[280px]">
+  {
+    projects.map((project, index) => (
+      <ProjectCard project={project} eager={index < 2} class={SPAN[project.data.cardSize]} />
+    ))
+  }
+</div>
