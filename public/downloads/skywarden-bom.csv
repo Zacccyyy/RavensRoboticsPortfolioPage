@@ -1,0 +1,8 @@
+item,qty,part_number,notes
+Frame,1,7in-freestyle-frame,carbon fiber
+Flight controller,1,ardupilot-fc-h7,ArduPilot firmware
+Onboard compute,1,jetson-orin-nano-8gb,YOLO inference
+Motors,4,2306-1900kv,
+ESC,1,4in1-45a,
+Camera,1,gimbal-cam-1080p,bird detection feed
+Battery,2,6s-1300mah-lipo,

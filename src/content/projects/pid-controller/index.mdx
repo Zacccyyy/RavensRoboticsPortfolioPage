@@ -1,0 +1,23 @@
+---
+title: "PID Controller"
+slug: "pid-controller"
+tagline: "A small embedded control-loop library, built for tight loop budgets."
+summary: "A small, dependency-free PID control-loop library for embedded C, built for tight loop budgets."
+date: 2025-08-22
+status: "shipped"
+category: "software"
+cardSize: "sm"
+tags: ["pid", "embedded", "control-systems", "c"]
+links:
+  github: "https://github.com/your-handle/pid-controller"
+---
+
+A minimal PID controller implementation for embedded targets: fixed-point
+friendly, no dynamic allocation, no dependencies beyond the standard
+library. Originally split out of the TERRAPOD dosing-pump code once it
+became clear the loop itself had no project-specific logic in it.
+
+## Current state
+
+Stable and in use across several other projects on this site. Interface is
+considered frozen; changes from here are bug fixes only.

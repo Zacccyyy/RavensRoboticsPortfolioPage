@@ -1,0 +1,38 @@
+---
+title: "SKYWARDEN"
+slug: "skywarden"
+tagline: "An autonomous 7\" drone that patrols the garden and deters birds on its own."
+summary: "A 7\" autonomous drone that patrols the garden on ArduPilot, spots birds with an onboard YOLO model on a Jetson Orin Nano, and deploys deterrents without a human in the loop."
+date: 2026-04-02
+status: "in-progress"
+category: "robotics"
+featured: true
+cardSize: "lg"
+tags: ["drone", "ardupilot", "jetson-orin-nano", "yolo", "computer-vision"]
+cover: "./cover.svg"
+videos:
+  - provider: "youtube"
+    id: "REPLACE_WITH_YOUTUBE_ID"
+    title: "SKYWARDEN — First Autonomous Patrol"
+downloads:
+  - label: "Bill of Materials (CSV)"
+    url: "/downloads/skywarden-bom.csv"
+    size: "1 KB"
+links:
+  github: "https://github.com/your-handle/skywarden"
+---
+
+SKYWARDEN is a 7" freestyle-frame drone repurposed as an autonomous garden
+sentry. ArduPilot handles flight control and mission planning; a Jetson Orin
+Nano riding onboard runs a YOLO model trained to pick out birds against the
+garden's foliage in real time, entirely offboard of any ground station.
+
+On detection, SKYWARDEN breaks its patrol pattern, closes distance to the
+target at a safe standoff, and triggers a non-harmful deterrent before
+resuming its route — no human in the loop for the common case.
+
+## Current state
+
+Patrol routing, onboard inference, and deterrent triggering all work in
+isolation. The remaining work is fusing them into one mission state machine
+and hardening detection against false positives from wind-blown foliage.

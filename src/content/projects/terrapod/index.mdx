@@ -1,0 +1,45 @@
+---
+title: "TERRAPOD"
+slug: "terrapod"
+tagline: "A self-tending hydroponic terrarium, driven by a Pi 5 and an ESP32 sensor mesh."
+summary: "Closed-loop hydroponic terrarium: a Pi 5 handles scheduling and vision, an ESP32 mesh reports climate and reservoir data, and both drive lighting, irrigation, and dosing automatically."
+date: 2026-02-18
+status: "in-progress"
+category: "hardware"
+featured: true
+cardSize: "lg"
+tags: ["hydroponics", "raspberry-pi", "esp32", "automation", "sensors"]
+accent: "#4FD97A"
+cover: "./cover.jpg"
+gallery:
+  - "./gallery/01-enclosure.jpg"
+  - "./gallery/02-sensor-array.jpg"
+  - "./gallery/03-dashboard.jpg"
+preview:
+  src: "./preview-loop.mp4"
+  poster: "./preview-poster.svg"
+videos:
+  - provider: "local"
+    src: "./grow-cycle.mp4"
+    poster: "./video-poster.svg"
+    title: "One Grow Cycle, Timelapse"
+    caption: "Six weeks of automated lighting and irrigation compressed to ninety seconds."
+links:
+  github: "https://github.com/your-handle/terrapod"
+---
+
+TERRAPOD is a closed enclosure that grows itself. A Raspberry Pi 5 runs the
+scheduling logic and a local dashboard; an ESP32 talks to a mesh of sensors
+scattered through the reservoir and canopy, reporting soil moisture, air
+temperature and humidity, and reservoir level over a lightweight radio link.
+
+The Pi acts on that data directly: dosing pumps run on a PID loop tied to
+reservoir EC and pH, grow lights follow a configurable photoperiod, and
+irrigation cycles adjust themselves against moisture readings rather than a
+fixed timer.
+
+## Current state
+
+Environmental monitoring, lighting, and irrigation are live and have been
+running unattended for several weeks. Reservoir dosing is next — nutrient
+concentration is currently manual pending a peristaltic pump controller.

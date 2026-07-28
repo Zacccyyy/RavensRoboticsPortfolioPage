@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <rect width="1600" height="900" fill="#14181C"/>
+  <rect x="0.5" y="0.5" width="1599" height="899" fill="none" stroke="rgba(232,234,237,0.08)"/>
+  <line x1="0" y1="0" x2="1600" y2="900" stroke="rgba(232,234,237,0.08)" stroke-width="1"/>
+  <line x1="1600" y1="0" x2="0" y2="900" stroke="rgba(232,234,237,0.08)" stroke-width="1"/>
+  <text x="50%" y="50%" fill="#8A939B" font-family="monospace" font-size="24" text-anchor="middle" dominant-baseline="middle" letter-spacing="2">TERRAPOD — GROW CYCLE</text>
+</svg>

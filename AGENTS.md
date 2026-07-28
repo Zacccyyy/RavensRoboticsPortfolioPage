@@ -13,7 +13,8 @@ projects. Built with Astro 7, TypeScript (strict), and Tailwind CSS 4.
   nav). Structure only.
 - `src/pages/` — routes. Structure only.
 - `src/content/` — content collections: projects, about copy, links —
-  all actual personal/portfolio content lives here.
+  all actual personal/portfolio content lives here. See "Content
+  collections" below for the exact layout.
 - `site.config.ts` — site-wide personal data (name, socials, contact,
   copyright) that components/layouts read from.
 - `src/styles/tokens.css` — design tokens, wired into Tailwind 4 via
@@ -27,6 +28,27 @@ descriptions, links, dates, etc.). All of that lives in
 `site.config.ts` or `src/content/` and is passed in as props/data. This
 keeps the visual system reusable/forkable independent of the content
 that fills it.
+
+## Content collections
+
+- Schema lives at `src/content.config.ts` — **not**
+  `src/content/config.ts`. Astro 7 moved the content config to the src
+  root; a file at the old `src/content/config.ts` path fails the build
+  with a message telling you to move it.
+- Each project is a colocated folder:
+  `src/content/projects/<slug>/index.mdx`, with every asset that entry
+  references (`cover`, `gallery`, `preview.poster`, video posters) sitting
+  in that same `<slug>/` folder and referenced by relative path (e.g.
+  `./cover.jpg`). There is no separate `src/assets/projects/<slug>/` tree
+  — assets travel with the content file that uses them.
+- Entries are `.mdx`, not `.md`, via `@astrojs/mdx` (configured in
+  `astro.config.mjs`). Body content can drop into inline components —
+  a mid-article image, an embedded video — rather than staying
+  plain-markdown-only.
+- `downloads[].url` should normally point at an external host (GitHub
+  Releases is the default choice) rather than into `public/`. `public/`
+  is reserved for small, text-format files (a BOM CSV, a pinout table) —
+  not binaries or anything of meaningful size.
 
 ## Design tokens
 
