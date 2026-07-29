@@ -1,7 +1,8 @@
 ---
 import { getCollection, render } from 'astro:content';
-import { Image, Picture } from 'astro:assets';
+import { Image, Picture, getImage } from 'astro:assets';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import siteConfig from '../../../site.config';
 import SiteHeader from '../../components/SiteHeader.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import StatusPill from '../../components/StatusPill.astro';
@@ -31,9 +32,38 @@ const coverAlt = `${data.title} — ${data.tagline}`;
 const dateLabel = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' })
   .format(data.date)
   .toUpperCase();
+
+// SVG covers are this repo's placeholder art, not a real hero photo — fall
+// through to the site default OG image rather than serving crawlers a
+// vector (OG scrapers largely expect a raster) or a rasterized placeholder.
+const ogImage =
+  data.cover && !isVectorCover
+    ? (await getImage({ src: data.cover, format: 'jpeg', width: 1200 })).src
+    : undefined;
+
+const creativeWorkSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CreativeWork',
+  name: data.title,
+  description: data.summary,
+  url: new URL(`/projects/${data.slug}/`, siteConfig.seo.siteUrl).toString(),
+  datePublished: data.date.toISOString().slice(0, 10),
+  keywords: data.tags.join(', '),
+  creator: {
+    '@type': 'Person',
+    name: siteConfig.name,
+    url: siteConfig.seo.siteUrl,
+  },
+};
 ---
 
-<BaseLayout title={`${data.title} — ${data.tagline}`} description={data.summary}>
+<BaseLayout
+  title={`${data.title} — ${data.tagline}`}
+  description={data.summary}
+  image={ogImage}
+  type="article"
+  structuredData={creativeWorkSchema}
+>
   <SiteHeader />
 
   <main class="pb-24 pt-32">
@@ -41,7 +71,7 @@ const dateLabel = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'nume
     <div class="mx-auto max-w-max-width px-margin-mobile py-4 md:px-margin-desktop">
       <a
         href="/#work"
-        class="group inline-flex items-center gap-2 font-mono text-mono-xs uppercase tracking-widest text-ink-muted transition-colors hover:text-ink"
+        class="focus-ring group inline-flex items-center gap-2 font-mono text-mono-xs uppercase tracking-widest text-ink-muted transition-colors hover:text-ink"
       >
         <span class="transition-transform group-hover:-translate-x-1">&larr;</span>
         All Projects

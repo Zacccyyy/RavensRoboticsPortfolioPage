@@ -17,7 +17,7 @@ const { label, active = false } = Astro.props;
   type="button"
   data-filter={label}
   aria-pressed={active}
-  class="chip whitespace-nowrap border border-hairline px-4 py-2 font-mono text-mono uppercase tracking-widest text-ink-muted transition-colors hover:border-hairline-bright hover:text-ink"
+  class="focus-ring chip whitespace-nowrap border border-hairline px-4 py-2 font-mono text-mono uppercase tracking-widest text-ink-muted transition-colors hover:border-hairline-bright hover:text-ink"
 >
   {label}
 </button>
@@ -26,14 +26,21 @@ const { label, active = false } = Astro.props;
   /* Selected state: accent-a (#7C5CFF), per the design tokens' "structural
      only" rule — this is a solid background with dark text on top, not
      accent-a used as text-on-void, so it doesn't run into the WCAG AA
-     failure that rule exists to prevent (see tokens.css). */
+     failure that rule exists to prevent (see tokens.css).
+
+     Text colour is literal black, not var(--color-bg-void): measured
+     contrast of accent-a against bg-void (#0B0D0F) is 4.479:1, which
+     fails the 4.5:1 AA threshold by a hair (caught by Lighthouse, not by
+     eye). Literal black against accent-a measures 4.832:1 and passes.
+     This changes only this one text-on-accent-a case, not the bg-void
+     token itself or accent-a's value. */
   .chip[aria-pressed='true'] {
     border-color: var(--color-accent-a);
     background-color: var(--color-accent-a);
-    color: var(--color-bg-void);
+    color: #000;
   }
   .chip[aria-pressed='true']:hover {
     border-color: var(--color-accent-a);
-    color: var(--color-bg-void);
+    color: #000;
   }
 </style>

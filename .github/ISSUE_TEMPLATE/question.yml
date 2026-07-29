@@ -1,0 +1,22 @@
+name: Question
+description: "How do I...?"
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check **CONTENT.md** (schema, adding a project, the media policy)
+        and **README.md**'s Troubleshooting section first — most "how do I"
+        questions are answered there already.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you already tried or read?
+    validations:
+      required: false

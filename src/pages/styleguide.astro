@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import siteConfig from "../../site.config";
 
 const colors = [
   { name: "bg-void", class: "bg-bg-void", value: "#0B0D0F" },
@@ -37,7 +38,7 @@ const statuses = [
 const tags = ["ROBOTICS", "HARDWARE", "PYTHON"];
 ---
 
-<BaseLayout title="Styleguide — RavensRobotics">
+<BaseLayout title={`Styleguide — ${siteConfig.shortName}`}>
   <main class="mx-auto max-w-[1200px] px-6 py-24">
     <header class="mb-16 border-l border-hairline pl-8">
       <h1 class="font-display text-display-lg uppercase text-ink">Styleguide</h1>
@@ -106,13 +107,13 @@ const tags = ["ROBOTICS", "HARDWARE", "PYTHON"];
     <section class="mb-20">
       <h2 class="mb-8 font-display text-h2 uppercase text-ink">04 — Buttons</h2>
       <div class="flex flex-wrap gap-4 border border-hairline bg-surface p-8">
-        <button class="bg-signal px-6 py-3 font-mono text-mono uppercase text-bg-void transition hover:brightness-110">
+        <button class="focus-ring bg-signal px-6 py-3 font-mono text-mono uppercase text-bg-void transition hover:brightness-110">
           Solid Signal
         </button>
-        <button class="gradient-border px-6 py-3 font-mono text-mono uppercase text-ink transition">
+        <button class="focus-ring gradient-border px-6 py-3 font-mono text-mono uppercase text-ink transition">
           Outlined
         </button>
-        <button class="border border-transparent px-6 py-3 font-mono text-mono uppercase text-ink-muted transition hover:border-hairline hover:text-ink">
+        <button class="focus-ring border border-transparent px-6 py-3 font-mono text-mono uppercase text-ink-muted transition hover:border-hairline hover:text-ink">
           Ghost
         </button>
       </div>
@@ -128,7 +129,7 @@ const tags = ["ROBOTICS", "HARDWARE", "PYTHON"];
       <div class="flex flex-wrap gap-x-12 gap-y-6 border border-hairline bg-surface p-8">
         <div>
           <div class="mb-2 font-mono text-mono-xs uppercase text-ink-muted">nav link — rest</div>
-          <a href="#" class="link-demo font-mono text-mono uppercase tracking-widest text-ink-muted">WORK</a>
+          <a href="#" class="focus-ring link-demo font-mono text-mono uppercase tracking-widest text-ink-muted">WORK</a>
         </div>
         <div>
           <div class="mb-2 font-mono text-mono-xs uppercase text-ink-muted">nav link — hover</div>
@@ -136,7 +137,7 @@ const tags = ["ROBOTICS", "HARDWARE", "PYTHON"];
         </div>
         <div>
           <div class="mb-2 font-mono text-mono-xs uppercase text-ink-muted">footer link — rest</div>
-          <a href="#" class="link-demo font-mono text-mono uppercase tracking-widest text-ink-muted">GITHUB</a>
+          <a href="#" class="focus-ring link-demo font-mono text-mono uppercase tracking-widest text-ink-muted">GITHUB</a>
         </div>
         <div>
           <div class="mb-2 font-mono text-mono-xs uppercase text-ink-muted">footer link — hover</div>

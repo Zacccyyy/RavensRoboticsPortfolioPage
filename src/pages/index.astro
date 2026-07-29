@@ -11,9 +11,33 @@ import siteConfig from '../../site.config';
 const projects = (await getCollection('projects')).sort(
   (a, b) => Number(b.data.featured) - Number(a.data.featured) || b.data.date.valueOf() - a.data.date.valueOf(),
 );
+
+// Person: this repo's whole point is showcasing one person's builds, so the
+// homepage carries the full profile — project pages reference the same
+// person only briefly, as CreativeWork.creator (see [slug].astro).
+const personSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: siteConfig.name,
+  description: siteConfig.bio,
+  url: siteConfig.seo.siteUrl,
+  email: siteConfig.email,
+  sameAs: siteConfig.social.map((link) => link.url),
+};
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: siteConfig.name,
+  description: siteConfig.seo.description,
+  url: siteConfig.seo.siteUrl,
+};
 ---
 
-<BaseLayout title={siteConfig.seo.title} description={siteConfig.seo.description}>
+<BaseLayout
+  title={siteConfig.seo.title}
+  description={siteConfig.seo.description}
+  structuredData={[personSchema, websiteSchema]}
+>
   <SiteHeader />
 
   <main class="pb-24 pt-32">

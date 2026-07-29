@@ -1,5 +1,6 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
+import { z, type ZodType } from 'astro/zod';
 
 // ---------------------------------------------------------------------------
 // Enum sources of truth. Every valid value for a given field lives here and
@@ -34,7 +35,7 @@ function enumError(field: string, allowed: readonly string[]) {
 // authored relative-path string, not yet a resolved asset. This is what
 // keeps the editor's validation and this schema from ever drifting apart:
 // there is only one schema definition, not two hand-synced copies.
-export function projectSchema(image: () => z.ZodTypeAny) {
+export function projectSchema<ImageSchema extends ZodType>(image: () => ImageSchema) {
   return z.object({
       title: z.string(),
       slug: z.string(),

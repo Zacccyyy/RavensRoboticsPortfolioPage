@@ -1,22 +1,32 @@
-# RavensRobotics
+# Portfolio site template
 
 ## Purpose
 
-RavensRobotics is an open-source personal portfolio site: a clinical,
-technical visual language for showcasing robotics/hardware/software
-projects. Built with Astro 7, TypeScript (strict), and Tailwind CSS 4.
+An open-source personal-portfolio template: a clinical, technical visual
+language for showcasing robotics/hardware/software projects, forkable by
+anyone. Built with Astro 7, TypeScript (strict), and Tailwind CSS 4. See
+README.md for the fork quickstart and CONTENT.md for the content schema —
+this file is developer/AI-assistant guidance on the codebase itself, not
+end-user documentation.
 
 ## Architecture
 
 - `src/layouts/` — page shells (`BaseLayout.astro`). Structure only.
 - `src/components/` — reusable UI pieces (buttons, cards, status pills,
   nav). Structure only.
-- `src/pages/` — routes. Structure only.
+- `src/pages/` — routes. Structure only. (`src/studio/` is the one
+  exception to the src/pages convention — see "Pages & navigation" below
+  for why it lives outside it.)
 - `src/content/` — content collections: projects, about copy, links —
   all actual personal/portfolio content lives here. See "Content
   collections" below for the exact layout.
 - `site.config.ts` — site-wide personal data (name, socials, contact,
-  copyright) that components/layouts read from.
+  copyright) that components/layouts read from. **Committed** — this repo
+  is a live site first and a fork template second (see README.md), so the
+  real config and real content collection ship in the repo, not a
+  gitignored/generated placeholder. `site.config.example.ts` is reference
+  documentation only (every field, with an example value and comment) —
+  nothing reads it at build or run time; don't copy it over the real file.
 - `src/styles/tokens.css` — design tokens, wired into Tailwind 4 via
   `@theme` (CSS-first config, no `tailwind.config.js`).
 - `src/styles/global.css` — Tailwind entrypoint, base resets, blueprint
@@ -115,34 +125,47 @@ that fills it.
 
 - `/` — home (`src/pages/index.astro`): hero, filter chips, project grid,
   footer.
-- `/styleguide` — design token reference.
-- `/projects/<slug>/` — project detail route. Cards already link here
-  (`ProjectCard.astro`) even though the route isn't built yet.
-- The nav deliberately has no ABOUT or CONTACT link — neither page exists
-  yet, and a dead link is worse than an absent one. "WORK" in the nav is
-  a same-page anchor (`#work`) down to the grid section, not a route, so
-  it doesn't need to match the `/projects/` URL it links into. Add an
-  About page when this repo gets prepared as a fork-friendly template —
-  the bio/social copy already lives in `site.config.ts`, so it's mostly
-  a layout job at that point, not a content one.
+- `/projects/<slug>/` — project detail route (`src/pages/projects/[slug].astro`).
+  Per-project OG image, JSON-LD `CreativeWork`, gallery/lightbox, video embeds.
+- `/styleguide` — design token reference. Excluded from the sitemap
+  (`astro.config.mjs`'s `sitemap()` filter) — it's a dev/design reference,
+  not public-facing content.
+- `/robots.txt`, `/sitemap-index.xml` — generated; see `src/pages/robots.txt.ts`
+  and the `sitemap()` integration.
+- `/studio`, `/studio/<slug>` — the local content editor. Lives at
+  `src/studio/` (**not** `src/pages/studio/`) specifically so it's
+  structurally absent from production: `src/integrations/studio-dev.ts`
+  injects these routes via `injectRoute()` only when `command === 'dev'`,
+  so a production build never generates them at all — there's nothing to
+  clean up after the fact. Never move these files into `src/pages/` "for
+  consistency"; that would make them real routes that ship. See
+  CONTENT.md for what the editor does from a content-author's perspective.
+- The nav has no ABOUT or CONTACT link — neither page exists yet (a dead
+  link is worse than an absent one), though the bio/social copy this
+  template already collects in `site.config.ts` would make an About page
+  mostly a layout job, not a content one, whenever someone adds it. "WORK"
+  in the nav is a same-page anchor (`#work`) down to the grid section, not
+  a route, so it doesn't need to match the `/projects/` URL it links into.
 
 ## Accessibility notes
 
 - `CardGrid.astro`'s mobile featured-rail (`.featured-rail` / `.rail-item`)
   uses `display: contents` to collapse into the desktop bento grid at `md:`
   without duplicating any card markup — see the comment at the top of that
-  file for why. Verified against current Chromium (via Playwright,
-  `ariaSnapshot()`) that every card's role, heading, link, and image alt
-  text come through identically in both the mobile (real flex container)
-  and desktop (collapsed) states, with no elements dropped and tab order
-  matching DOM order. **Flag for the accessibility pass:** `display:
-  contents` has a history of a11y-tree bugs in older engines — pre-15.4
-  Safari and some older Firefox releases have shipped versions that drop a
-  `display: contents` element's children from the accessibility tree
-  entirely rather than exposing them as if the wrapper weren't there. This
-  hasn't been verified against Safari or Firefox directly (no access to
-  either engine in the environment this was built in) — worth a manual
-  VoiceOver/Safari pass before calling the rail done.
+  file for why. Verified via Playwright `ariaSnapshot()` on `#project-grid`
+  at both a mobile viewport (390×844, `.featured-rail` is a real flex
+  container) and a desktop viewport (1280×900, collapsed via `display:
+  contents`), across **Chromium, current WebKit, and current Firefox**:
+  identical heading/link/img counts and byte-identical snapshot in all
+  three, at both viewports — no elements dropped, tab order matches DOM
+  order. **Still not covered:** Playwright's WebKit build tracks *current*
+  WebKit, not the specific pre-15.4 Safari releases the historical
+  `display: contents` a11y-tree bug shipped in — no vendor distributes old
+  WebKit/Gecko builds for automated testing, so that gap can only be closed
+  by a manual VoiceOver pass on an actual pre-15.4 Safari (or BrowserStack
+  equivalent), not by more automation. Old Firefox is the same situation.
+  Current-engine coverage is as complete as tooling allows; the
+  historical-engine risk itself is unchanged from before this pass.
 
 ## Design tokens
 
@@ -211,6 +234,14 @@ Full token reference rendered live at `/styleguide`.
   (`client:*`) when it needs actual interactivity.
 
 ## Development
+
+First time in this repo (or any fresh clone): `npm install`. `site.config.ts`
+and `src/content/projects/` are real, committed files (see "Architecture"
+above) — `npm run build` works immediately, no setup step required.
+`npm run setup` is optional: it regenerates `public/og-default.png` from
+the current `site.config.ts` and prints a reminder checklist for anyone
+setting this up as their own fork (see README.md's Quickstart) — it never
+overwrites or deletes anything.
 
 Start the dev server in background mode:
 

@@ -21,7 +21,7 @@ const hasDownloads = Boolean(downloads?.length);
       {links?.github && (
         <a
           href={links.github}
-          class="flex w-full items-center justify-center gap-3 border border-ink px-8 py-4 font-mono text-mono uppercase text-ink transition-colors hover:bg-ink hover:text-bg-void sm:w-auto"
+          class="focus-ring flex w-full items-center justify-center gap-3 border border-ink px-8 py-4 font-mono text-mono uppercase text-ink transition-colors hover:bg-ink hover:text-bg-void sm:w-auto"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M8 4 3 12l5 8M16 4l5 8-5 8" stroke-linecap="round" stroke-linejoin="round" />
@@ -32,7 +32,7 @@ const hasDownloads = Boolean(downloads?.length);
       {links?.demo && (
         <a
           href={links.demo}
-          class="flex w-full items-center justify-center gap-3 bg-signal px-8 py-4 font-mono text-mono font-bold uppercase text-bg-void transition-[filter] hover:brightness-110 sm:w-auto"
+          class="focus-ring flex w-full items-center justify-center gap-3 bg-signal px-8 py-4 font-mono text-mono font-bold uppercase text-bg-void transition-[filter] hover:brightness-110 sm:w-auto"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M13 3 4 14h7l-1 7 9-11h-7l1-7Z" stroke-linecap="round" stroke-linejoin="round" />
@@ -43,7 +43,7 @@ const hasDownloads = Boolean(downloads?.length);
       {links?.docs && (
         <a
           href={links.docs}
-          class="flex w-full items-center justify-center gap-3 border border-ink px-8 py-4 font-mono text-mono uppercase text-ink transition-colors hover:bg-ink hover:text-bg-void sm:w-auto"
+          class="focus-ring flex w-full items-center justify-center gap-3 border border-ink px-8 py-4 font-mono text-mono uppercase text-ink transition-colors hover:bg-ink hover:text-bg-void sm:w-auto"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke-linecap="round" stroke-linejoin="round" />
@@ -60,7 +60,7 @@ const hasDownloads = Boolean(downloads?.length);
             data-downloads-trigger
             aria-expanded="true"
             aria-controls="downloads-panel"
-            class="flex w-full items-center justify-center gap-3 border border-transparent px-8 py-4 font-mono text-mono uppercase text-accent-b transition-colors hover:border-accent-b sm:w-auto"
+            class="focus-ring flex w-full items-center justify-center gap-3 border border-transparent px-8 py-4 font-mono text-mono uppercase text-accent-b transition-colors hover:border-accent-b sm:w-auto"
           >
             Downloads
             <svg
@@ -80,14 +80,14 @@ const hasDownloads = Boolean(downloads?.length);
           <div
             id="downloads-panel"
             data-downloads-panel
-            class="absolute left-0 top-full z-20 mt-2 w-80 space-y-4 border border-hairline bg-surface-raised p-6 font-mono text-mono-xs shadow-2xl"
+            class="absolute left-0 top-full z-20 mt-2 w-80 space-y-4 border border-hairline bg-surface-raised p-6 font-mono text-mono-xs"
           >
             {downloads?.map((file, index) => (
               <a
                 href={file.url}
                 download
                 class:list={[
-                  'flex items-center justify-between gap-4 pb-2 text-ink-muted transition-colors hover:text-ink',
+                  'focus-ring flex items-center justify-between gap-4 pb-2 text-ink-muted transition-colors hover:text-ink',
                   index < (downloads?.length ?? 0) - 1 && 'border-b border-hairline',
                 ]}
               >

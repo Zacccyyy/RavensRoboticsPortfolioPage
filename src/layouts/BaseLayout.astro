@@ -1,13 +1,39 @@
 ---
 import "../styles/global.css";
 import { ClientRouter } from "astro:transitions";
+import siteConfig from "../../site.config";
 
 interface Props {
   title: string;
   description?: string;
+  /** Root-relative or absolute path to the social-share image. Defaults to
+   * siteConfig.seo.ogImage — pass a project's own cover for project pages. */
+  image?: string;
+  /** "article" for project detail pages, "website" for everything else. */
+  type?: 'website' | 'article';
+  /** One JSON-LD object, or several — each becomes its own <script> tag.
+   * Values come from siteConfig/content-collection data (both authored by
+   * the site owner, via the studio or by hand), never arbitrary third-party
+   * input, so serializing them straight into `set:html` carries no more
+   * risk than any other server-rendered content on this site. */
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
 }
 
-const { title, description = "RavensRobotics — personal portfolio." } = Astro.props;
+const {
+  title,
+  description = siteConfig.seo.description,
+  image = siteConfig.seo.ogImage,
+  type = 'website',
+  structuredData,
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, siteConfig.seo.siteUrl).toString();
+const ogImageURL = new URL(image, siteConfig.seo.siteUrl).toString();
+const structuredDataList = structuredData
+  ? Array.isArray(structuredData)
+    ? structuredData
+    : [structuredData]
+  : [];
 ---
 
 <!doctype html>
@@ -17,8 +43,24 @@ const { title, description = "RavensRobotics — personal portfolio." } = Astro.
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
+
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content={ogImageURL} />
+    <meta property="og:site_name" content={siteConfig.name} />
+    <meta name="twitter:card" content="summary_large_image" />
+    {siteConfig.seo.twitterHandle && <meta name="twitter:site" content={siteConfig.seo.twitterHandle} />}
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageURL} />
+
+    {structuredDataList.map((data) => <script type="application/ld+json" is:inline set:html={JSON.stringify(data)} />)}
+
     <ClientRouter />
   </head>
   <body class="bg-bg-void text-ink font-body text-body min-h-screen blueprint-grid">

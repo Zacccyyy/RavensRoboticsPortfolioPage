@@ -200,18 +200,32 @@ function createGalleryCell(): HTMLElement {
   const controls = document.createElement('div');
   controls.className = 'absolute top-1 right-1 flex gap-1';
 
+  const moveEarlierButton = document.createElement('button');
+  moveEarlierButton.type = 'button';
+  moveEarlierButton.className = 'focus-ring move-gallery-item-earlier bg-bg-void/80 p-1 text-mono-xs';
+  moveEarlierButton.setAttribute('aria-label', 'Move image earlier');
+  moveEarlierButton.textContent = '←';
+
+  const moveLaterButton = document.createElement('button');
+  moveLaterButton.type = 'button';
+  moveLaterButton.className = 'focus-ring move-gallery-item-later bg-bg-void/80 p-1 text-mono-xs';
+  moveLaterButton.setAttribute('aria-label', 'Move image later');
+  moveLaterButton.textContent = '→';
+
   const dragHandle = document.createElement('button');
   dragHandle.type = 'button';
-  dragHandle.className = 'drag-handle cursor-grab bg-bg-void/80 p-1 text-mono-xs';
+  dragHandle.className = 'focus-ring drag-handle cursor-grab bg-bg-void/80 p-1 text-mono-xs';
   dragHandle.setAttribute('aria-label', 'Drag to reorder');
   dragHandle.textContent = '⠿';
 
   const removeButton = document.createElement('button');
   removeButton.type = 'button';
-  removeButton.className = 'remove-gallery-item bg-bg-void/80 p-1 text-mono-xs text-red-400';
+  removeButton.className = 'focus-ring remove-gallery-item bg-bg-void/80 p-1 text-mono-xs text-red-400';
   removeButton.setAttribute('aria-label', 'Remove image');
   removeButton.textContent = '×';
 
+  controls.appendChild(moveEarlierButton);
+  controls.appendChild(moveLaterButton);
   controls.appendChild(dragHandle);
   controls.appendChild(removeButton);
 
@@ -246,6 +260,30 @@ galleryGrid.addEventListener('click', (e) => {
   if (target.classList.contains('remove-gallery-item')) {
     target.closest('.gallery-cell')?.remove();
     dirty = true;
+    return;
+  }
+  // Keyboard-operable equivalent to the drag handle below — dragstart/
+  // dragover never fire from a keyboard, so without these, reordering the
+  // gallery is mouse-only.
+  if (target.classList.contains('move-gallery-item-earlier')) {
+    const cell = target.closest('.gallery-cell');
+    const previous = cell?.previousElementSibling;
+    if (cell && previous && previous.classList.contains('gallery-cell')) {
+      galleryGrid.insertBefore(cell, previous);
+      target.focus();
+      dirty = true;
+    }
+    return;
+  }
+  if (target.classList.contains('move-gallery-item-later')) {
+    const cell = target.closest('.gallery-cell');
+    const next = cell?.nextElementSibling;
+    if (cell && next && next.classList.contains('gallery-cell')) {
+      galleryGrid.insertBefore(next, cell);
+      target.focus();
+      dirty = true;
+    }
+    return;
   }
 });
 

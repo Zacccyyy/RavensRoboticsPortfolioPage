@@ -1,5 +1,21 @@
 /* Reusable global utility classes that aren't plain @theme tokens. */
 
+/* Consistent focus-visible ring for interactive elements that don't already
+   get a bespoke treatment (cards use .gradient-border-sweep:focus-visible
+   above instead — richer, but card-specific). accent-a is documented in
+   tokens.css as structural-only ("focus rings, gradients, borders" — never
+   text); a focus ring is exactly that, so this is a legitimate use, not an
+   exception to the rule. `outline` isn't clipped by an ancestor's own
+   `overflow: hidden` the way a box-shadow ring can be, which matters for
+   elements like Gallery.astro's tiles that clip their own image. */
+.focus-ring {
+  outline: none;
+}
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-accent-a);
+  outline-offset: 2px;
+}
+
 /* Gradient-border hover technique — reusable across buttons and cards.
    An opaque inner layer covers everything but the 1px border ring, where the
    accent-a -> accent-b gradient shows through. Must be

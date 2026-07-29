@@ -349,7 +349,7 @@ const displayPath = isNew
       <div class="space-y-2">
         <label class="block font-mono text-mono-xs uppercase text-ink-muted">Gallery Grid</label>
         <div id="gallery-grid" class="grid grid-cols-6 gap-3">
-          {initial.gallery.map((item, index) => (
+          {initial.gallery.map((item) => (
             <div
               class="gallery-cell image-slot relative aspect-square border border-hairline"
               draggable="true"
@@ -361,8 +361,10 @@ const displayPath = isNew
                 <div class="flex h-full w-full items-center justify-center font-mono text-mono-xs text-ink-muted">NO IMAGE</div>
               )}
               <div class="absolute top-1 right-1 flex gap-1">
-                <button type="button" class="drag-handle cursor-grab bg-bg-void/80 p-1 text-mono-xs" aria-label="Drag to reorder">⠿</button>
-                <button type="button" class="remove-gallery-item bg-bg-void/80 p-1 text-mono-xs text-red-400" aria-label="Remove image">×</button>
+                <button type="button" class="focus-ring move-gallery-item-earlier bg-bg-void/80 p-1 text-mono-xs" aria-label="Move image earlier">←</button>
+                <button type="button" class="focus-ring move-gallery-item-later bg-bg-void/80 p-1 text-mono-xs" aria-label="Move image later">→</button>
+                <button type="button" class="focus-ring drag-handle cursor-grab bg-bg-void/80 p-1 text-mono-xs" aria-label="Drag to reorder">⠿</button>
+                <button type="button" class="focus-ring remove-gallery-item bg-bg-void/80 p-1 text-mono-xs text-red-400" aria-label="Remove image">×</button>
               </div>
               <input type="text" class="gallery-alt w-full border-t border-hairline bg-bg-void/80 p-1 font-mono text-[10px] text-ink" placeholder="Alt text (required)" value={item.alt} />
               <input type="file" accept="image/*" class="gallery-replace-input hidden" />

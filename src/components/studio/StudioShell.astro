@@ -7,6 +7,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import StatusPill from '../StatusPill.astro';
 import type { STATUSES } from '../../content.config';
+import siteConfig from '../../../site.config';
 
 interface Props {
   title: string;
@@ -31,7 +32,7 @@ function formatDotDate(date: Date): string {
     >
       <div class="flex items-center gap-4">
         <span class="font-display text-h3 font-bold uppercase tracking-tighter text-ink">
-          RAVENS:ROBOTICS
+          {siteConfig.shortName}
         </span>
         <div class="h-4 w-px bg-hairline"></div>
         <span class="font-mono text-mono-xs uppercase tracking-widest text-ink-muted">

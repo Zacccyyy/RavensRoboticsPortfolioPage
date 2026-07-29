@@ -10,7 +10,7 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import sharp from 'sharp';
-import { z } from 'astro:content';
+import { z } from 'astro/zod';
 import { projectSchema } from '../content.config';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));

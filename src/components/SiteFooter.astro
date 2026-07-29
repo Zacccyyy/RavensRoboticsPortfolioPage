@@ -17,14 +17,20 @@ const copyrightYears =
       <div class="flex gap-4 font-mono text-mono uppercase">
         {
           siteConfig.social.map((link) => (
-            <a href={link.url} class="text-ink-muted transition-colors hover:text-ink">
+            <a href={link.url} class="focus-ring text-ink-muted transition-colors hover:text-ink">
               {link.label}
             </a>
           ))
         }
       </div>
     </div>
-    <div class="font-mono text-mono uppercase text-ink-muted opacity-60">
+    <!-- No opacity-60 here: it was dimming ink-muted (5.715:1 on surface)
+         down to 2.881:1, failing WCAG AA (measured via Lighthouse, not
+         visible by eye against this dark background). ink-muted at full
+         opacity already reads as the least-prominent text on the page —
+         the extra dimming wasn't adding a visual distinction worth losing
+         AA compliance for. -->
+    <div class="font-mono text-mono uppercase text-ink-muted">
       &copy; {copyrightYears} {siteConfig.copyrightHolder}
     </div>
   </div>

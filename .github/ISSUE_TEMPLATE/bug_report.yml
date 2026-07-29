@@ -1,0 +1,41 @@
+name: Bug report
+description: Something in the template itself is broken
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is for bugs in the **template** (the studio editor, the build,
+        the schema, a component). If your own fork's content isn't showing
+        up the way you expect, check CONTENT.md first — that's usually a
+        frontmatter issue, not a template bug.
+  - type: input
+    id: version
+    attributes:
+      label: Where are you running this?
+      placeholder: "e.g. npm run dev, locally — or a Cloudflare Pages deploy"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the exact error message if there is one.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. npm run dev
+        2. Open /studio
+        3. ...
+    validations:
+      required: true
