@@ -1,0 +1,574 @@
+---
+// Dev-only project editor. This file lives outside src/pages entirely, so
+// Astro's file-based router never discovers it on its own — it only
+// becomes a route at all when src/integrations/studio-dev.ts calls
+// injectRoute() from its `astro:config:setup` hook, which it only does
+// when `command === 'dev'`. During `astro build`, that call never happens,
+// so this route has no presence in the build to clean up afterward. The
+// `import.meta.env.DEV` check below is pure defense-in-depth on top of
+// that — not the guarantee itself.
+//
+// No getStaticPaths: this route is never prerendered (it's never injected
+// during a build in the first place), so the static-output constraint that
+// would otherwise require one doesn't apply here.
+import { existsSync, readFileSync } from 'node:fs';
+import { extname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parse as parseYaml } from 'yaml';
+import { getCollection } from 'astro:content';
+import StudioShell from '../components/studio/StudioShell.astro';
+import { STATUSES, CATEGORIES, CARD_SIZES, VIDEO_PROVIDERS, SUMMARY_MAX_LENGTH, TAGS_MAX } from '../content.config';
+import { readProjectRaw } from '../integrations/studio-save';
+
+const ROOT = fileURLToPath(new URL('../../', import.meta.url));
+const PROJECTS_DIR = join(ROOT, 'src/content/projects');
+
+if (!import.meta.env.DEV) {
+  return Astro.redirect('/', 302);
+}
+
+const { slug: routeSlug } = Astro.params as { slug: string };
+const isNew = routeSlug === 'new';
+
+const MIME: Record<string, string> = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+};
+
+function toDataUrl(absPath: string): string {
+  const ext = extname(absPath).toLowerCase();
+  const mime = MIME[ext] ?? 'application/octet-stream';
+  const bytes = readFileSync(absPath);
+  return `data:${mime};base64,${bytes.toString('base64')}`;
+}
+
+function resolveImagePreview(projectDir: string, relPath: string | undefined): { existingPath: string; dataUrl: string } | null {
+  if (!relPath) return null;
+  const abs = join(projectDir, relPath.replace(/^\.\//, ''));
+  if (!existsSync(abs)) return { existingPath: relPath, dataUrl: '' };
+  return { existingPath: relPath, dataUrl: toDataUrl(abs) };
+}
+
+const today = new Date().toISOString().slice(0, 10);
+
+let initial: {
+  title: string;
+  tagline: string;
+  summary: string;
+  date: string;
+  status: string;
+  category: string;
+  cardSize: string;
+  featured: boolean;
+  tags: string[];
+  accent: string;
+  cover: { existingPath: string; dataUrl: string } | null;
+  gallery: Array<{ alt: string; existingPath: string; dataUrl: string }>;
+  preview: {
+    existingSrc: string;
+    poster: { existingPath: string; dataUrl: string } | null;
+  } | null;
+  videos: Array<{
+    provider: string;
+    id: string;
+    title: string;
+    duration: string;
+    caption: string;
+    existingSrc: string;
+    poster: { existingPath: string; dataUrl: string } | null;
+  }>;
+  links: { github: string; demo: string; docs: string };
+  downloads: Array<{ label: string; url: string; size: string }>;
+  body: string;
+};
+
+let slug = isNew ? '' : routeSlug;
+
+if (isNew) {
+  initial = {
+    title: '',
+    tagline: '',
+    summary: '',
+    date: today,
+    status: 'concept',
+    category: 'software',
+    cardSize: 'md',
+    featured: false,
+    tags: [],
+    accent: '',
+    cover: null,
+    gallery: [],
+    preview: null,
+    videos: [],
+    links: { github: '', demo: '', docs: '' },
+    downloads: [],
+    body: '',
+  };
+} else {
+  const raw = readProjectRaw(routeSlug);
+  if (!raw) {
+    return Astro.redirect('/studio', 302);
+  }
+  const fm = parseYaml(raw.frontmatterRaw) as Record<string, any>;
+  const projectDir = join(PROJECTS_DIR, routeSlug);
+
+  initial = {
+    title: fm.title ?? '',
+    tagline: fm.tagline ?? '',
+    summary: fm.summary ?? '',
+    date: fm.date instanceof Date ? fm.date.toISOString().slice(0, 10) : String(fm.date ?? today),
+    status: fm.status ?? 'concept',
+    category: fm.category ?? 'software',
+    cardSize: fm.cardSize ?? 'md',
+    featured: Boolean(fm.featured),
+    tags: Array.isArray(fm.tags) ? fm.tags : [],
+    accent: fm.accent ?? '',
+    cover: resolveImagePreview(projectDir, fm.cover),
+    gallery: Array.isArray(fm.gallery)
+      ? fm.gallery.map((g: any) => ({
+          alt: g.alt ?? '',
+          ...(resolveImagePreview(projectDir, g.src) ?? { existingPath: '', dataUrl: '' }),
+        }))
+      : [],
+    preview: fm.preview
+      ? {
+          existingSrc: fm.preview.src ?? '',
+          poster: resolveImagePreview(projectDir, fm.preview.poster),
+        }
+      : null,
+    videos: Array.isArray(fm.videos)
+      ? fm.videos.map((v: any) => ({
+          provider: v.provider ?? 'youtube',
+          id: v.id ?? '',
+          title: v.title ?? '',
+          duration: v.duration ?? '',
+          caption: v.caption ?? '',
+          existingSrc: v.provider === 'local' ? v.src ?? '' : '',
+          poster: v.provider === 'local' ? resolveImagePreview(projectDir, v.poster) : null,
+        }))
+      : [],
+    links: {
+      github: fm.links?.github ?? '',
+      demo: fm.links?.demo ?? '',
+      docs: fm.links?.docs ?? '',
+    },
+    downloads: Array.isArray(fm.downloads) ? fm.downloads : [],
+    body: raw.body,
+  };
+}
+
+const allProjects = await getCollection('projects');
+const sidebarProjects = allProjects
+  .map((p) => ({ slug: p.data.slug, title: p.data.title, status: p.data.status, date: p.data.date }))
+  .sort((a, b) => b.date.getTime() - a.date.getTime());
+
+const displayPath = isNew
+  ? 'src/content/projects/<slug>/index.mdx'
+  : `src/content/projects/${slug}/index.mdx`;
+---
+
+<StudioShell title={isNew ? 'New Project' : initial.title} activeSlug={isNew ? undefined : slug} projects={sidebarProjects}>
+  <form id="project-form" class="mx-auto max-w-4xl space-y-16 px-10 py-12 pb-40" data-is-new={String(isNew)} data-previous-slug={isNew ? '' : slug}>
+    <div id="form-error-banner" class="hidden border border-red-500 bg-red-950/40 p-4 font-mono text-mono-xs text-red-400"></div>
+
+    <!-- 01. BASICS -->
+    <section class="space-y-6">
+      <div class="flex items-center gap-3">
+        <span class="font-display text-h3 font-bold uppercase tracking-widest text-accent-b">01. BASICS</span>
+        <div class="h-px flex-1 bg-hairline"></div>
+      </div>
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-8 space-y-2">
+          <label class="font-mono text-mono-xs uppercase text-ink-muted" for="field-title">Project Title</label>
+          <input
+            id="field-title"
+            name="title"
+            type="text"
+            required
+            value={initial.title}
+            class="w-full border border-hairline bg-transparent px-4 py-3 font-display text-h3 text-ink focus:border-accent-b focus:outline-none"
+          />
+          <p class="field-error font-mono text-mono-xs text-red-400" data-error-for="title"></p>
+        </div>
+        <div class="col-span-4 space-y-2">
+          <label class="font-mono text-mono-xs uppercase text-ink-muted" for="field-date">Date of Origin</label>
+          <input
+            id="field-date"
+            name="date"
+            type="date"
+            required
+            value={initial.date}
+            class="w-full border border-hairline bg-transparent px-4 py-3 font-mono text-mono-xs text-ink focus:border-accent-b focus:outline-none"
+          />
+        </div>
+        <div class="col-span-12 space-y-2">
+          <label class="flex justify-between font-mono text-mono-xs uppercase text-ink-muted" for="field-slug">
+            Slug
+            <button type="button" id="regenerate-slug" class="text-[10px] text-accent-b hover:underline">REGENERATE</button>
+          </label>
+          <div class="flex items-center border border-hairline bg-surface px-4 py-2">
+            <span class="font-mono text-mono-xs text-ink-muted">/projects/</span>
+            <input
+              id="field-slug"
+              name="slug"
+              type="text"
+              required
+              value={slug}
+              class="ml-1 flex-1 border-none bg-transparent p-0 font-mono text-mono-xs text-ink focus:outline-none"
+            />
+          </div>
+          <p class="field-error font-mono text-mono-xs text-red-400" data-error-for="slug"></p>
+        </div>
+        <div class="col-span-12 space-y-2">
+          <label class="font-mono text-mono-xs uppercase text-ink-muted" for="field-tagline">Tagline</label>
+          <input
+            id="field-tagline"
+            name="tagline"
+            type="text"
+            required
+            placeholder="One sentence pitch..."
+            value={initial.tagline}
+            class="w-full border border-hairline bg-transparent px-4 py-3 font-body text-body text-ink focus:border-accent-b focus:outline-none"
+          />
+        </div>
+        <div class="col-span-12 space-y-2">
+          <label class="flex justify-between font-mono text-mono-xs uppercase text-ink-muted" for="field-summary">
+            Summary (Metadata)
+            <span id="summary-count" class="text-ink-muted">{initial.summary.length}/{SUMMARY_MAX_LENGTH}</span>
+          </label>
+          <textarea
+            id="field-summary"
+            name="summary"
+            required
+            maxlength={SUMMARY_MAX_LENGTH}
+            rows="3"
+            class="w-full resize-none border border-hairline bg-transparent px-4 py-3 font-body text-body text-ink focus:border-accent-b focus:outline-none"
+          >{initial.summary}</textarea>
+          <p class="field-error font-mono text-mono-xs text-red-400" data-error-for="summary"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02. CLASSIFICATION -->
+    <section class="space-y-6">
+      <div class="flex items-center gap-3">
+        <span class="font-display text-h3 font-bold uppercase tracking-widest text-accent-b">02. CLASSIFICATION</span>
+        <div class="h-px flex-1 bg-hairline"></div>
+      </div>
+      <div class="grid grid-cols-12 gap-8">
+        <div class="col-span-6 space-y-6">
+          <div class="space-y-2">
+            <label class="font-mono text-mono-xs uppercase text-ink-muted" for="field-status">Status</label>
+            <select
+              id="field-status"
+              name="status"
+              class="w-full border border-hairline bg-surface px-4 py-3 font-mono text-mono-xs text-ink focus:border-accent-b focus:outline-none"
+            >
+              {STATUSES.map((s) => <option value={s} selected={s === initial.status}>{s.toUpperCase().replace('-', ' ')}</option>)}
+            </select>
+          </div>
+          <div class="space-y-4">
+            <label class="font-mono text-mono-xs uppercase text-ink-muted">Card Display Size</label>
+            <div class="flex gap-4">
+              {CARD_SIZES.map((size) => (
+                <label class="flex flex-1 cursor-pointer flex-col items-center gap-2 border border-hairline bg-surface p-4 hover:bg-surface-raised">
+                  <input type="radio" name="cardSize" value={size} checked={size === initial.cardSize} class="h-4 w-4 accent-signal" />
+                  <span class="font-mono text-mono-xs">{size.toUpperCase()}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div class="col-span-6 space-y-6">
+          <div class="space-y-2">
+            <label class="font-mono text-mono-xs uppercase text-ink-muted" for="field-category">Category</label>
+            <select
+              id="field-category"
+              name="category"
+              class="w-full border border-hairline bg-surface px-4 py-3 font-mono text-mono-xs text-ink focus:border-accent-b focus:outline-none"
+            >
+              {CATEGORIES.map((c) => <option value={c} selected={c === initial.category}>{c.toUpperCase()}</option>)}
+            </select>
+          </div>
+          <div class="space-y-2">
+            <div class="mb-1 flex items-center justify-between">
+              <label class="font-mono text-mono-xs uppercase text-ink-muted" for="field-featured">Featured</label>
+              <input id="field-featured" name="featured" type="checkbox" checked={initial.featured} class="h-5 w-9 accent-accent-b" />
+            </div>
+          </div>
+          <div class="space-y-2">
+            <label class="font-mono text-mono-xs uppercase text-ink-muted">Tags</label>
+            <div id="tags-container" data-max={TAGS_MAX} class="flex min-h-[48px] flex-wrap gap-2 border border-hairline p-3">
+              {initial.tags.map((tag) => (
+                <span class="tag-chip inline-flex items-center gap-1 bg-surface-raised px-2 py-0.5 font-mono text-mono-xs uppercase text-ink" data-tag={tag}>
+                  {tag} <button type="button" class="remove-tag" aria-label={`Remove ${tag}`}>×</button>
+                </span>
+              ))}
+              <input id="tag-input" type="text" placeholder="Add..." maxlength="24" class="flex-1 border-none bg-transparent p-0 font-mono text-mono-xs focus:outline-none" />
+            </div>
+            <p class="font-mono text-mono-xs text-ink-muted">Max {TAGS_MAX} tags — Enter or comma to add.</p>
+            <p class="field-error font-mono text-mono-xs text-red-400" data-error-for="tags"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03. MEDIA -->
+    <section class="space-y-6">
+      <div class="flex items-center gap-3">
+        <span class="font-display text-h3 font-bold uppercase tracking-widest text-accent-b">03. MEDIA</span>
+        <div class="h-px flex-1 bg-hairline"></div>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block font-mono text-mono-xs uppercase text-ink-muted">Cover Image</label>
+        <div class="grid grid-cols-12 gap-4">
+          <div
+            id="cover-slot"
+            class="image-slot col-span-4 aspect-video border border-hairline"
+            data-existing-path={initial.cover?.existingPath ?? ''}
+          >
+            {initial.cover?.dataUrl ? (
+              <img id="cover-preview" src={initial.cover.dataUrl} class="h-full w-full object-cover" alt="Cover preview" />
+            ) : (
+              <div id="cover-preview-empty" class="flex h-full w-full items-center justify-center font-mono text-mono-xs text-ink-muted">NO COVER</div>
+            )}
+          </div>
+          <label class="col-span-8 flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed border-hairline hover:border-accent-b">
+            <span class="font-mono text-mono-xs uppercase text-ink-muted">Drop or click to replace (high-res, auto-resized under {2500}px wide)</span>
+            <input id="cover-input" type="file" accept="image/*" class="hidden" />
+          </label>
+        </div>
+        <p class="field-error font-mono text-mono-xs text-red-400" data-error-for="cover"></p>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block font-mono text-mono-xs uppercase text-ink-muted">Gallery Grid</label>
+        <div id="gallery-grid" class="grid grid-cols-6 gap-3">
+          {initial.gallery.map((item, index) => (
+            <div
+              class="gallery-cell image-slot relative aspect-square border border-hairline"
+              draggable="true"
+              data-existing-path={item.existingPath}
+            >
+              {item.dataUrl ? (
+                <img class="h-full w-full object-cover" src={item.dataUrl} alt={item.alt} />
+              ) : (
+                <div class="flex h-full w-full items-center justify-center font-mono text-mono-xs text-ink-muted">NO IMAGE</div>
+              )}
+              <div class="absolute top-1 right-1 flex gap-1">
+                <button type="button" class="drag-handle cursor-grab bg-bg-void/80 p-1 text-mono-xs" aria-label="Drag to reorder">⠿</button>
+                <button type="button" class="remove-gallery-item bg-bg-void/80 p-1 text-mono-xs text-red-400" aria-label="Remove image">×</button>
+              </div>
+              <input type="text" class="gallery-alt w-full border-t border-hairline bg-bg-void/80 p-1 font-mono text-[10px] text-ink" placeholder="Alt text (required)" value={item.alt} />
+              <input type="file" accept="image/*" class="gallery-replace-input hidden" />
+            </div>
+          ))}
+          <label id="gallery-add" class="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 border-2 border-dashed border-hairline hover:border-accent-b">
+            <span class="font-mono text-[10px] uppercase text-ink-muted">+ Add</span>
+            <input id="gallery-input" type="file" accept="image/*" multiple class="hidden" />
+          </label>
+        </div>
+        <p class="field-error font-mono text-mono-xs text-red-400" data-error-for="gallery"></p>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block font-mono text-mono-xs uppercase text-ink-muted">Preview Loop (card hover video)</label>
+        <div class="flex gap-4">
+          <div
+            id="preview-poster-slot"
+            class="image-slot aspect-video w-40 border border-hairline"
+            data-existing-path={initial.preview?.poster?.existingPath ?? ''}
+          >
+            {initial.preview?.poster?.dataUrl ? (
+              <img id="preview-poster-preview" src={initial.preview.poster.dataUrl} class="h-full w-full object-cover" alt="Preview loop poster" />
+            ) : (
+              <div class="flex h-full w-full items-center justify-center font-mono text-[10px] text-ink-muted">POSTER</div>
+            )}
+          </div>
+          <div class="flex-1 space-y-2">
+            <label class="flex cursor-pointer items-center gap-2 border border-hairline px-4 py-2 font-mono text-mono-xs uppercase text-ink-muted hover:border-accent-b">
+              Choose poster image
+              <input id="preview-poster-input" type="file" accept="image/*" class="hidden" />
+            </label>
+            <label class="flex cursor-pointer items-center gap-2 border border-hairline px-4 py-2 font-mono text-mono-xs uppercase text-ink-muted hover:border-accent-b">
+              {initial.preview?.existingSrc ? `Replace video (current: ${initial.preview.existingSrc})` : 'Choose loop video (mp4, <500KB)'}
+              <input id="preview-video-input" type="file" accept="video/*" class="hidden" />
+            </label>
+            <input id="preview-video-existing" type="hidden" value={initial.preview?.existingSrc ?? ''} />
+          </div>
+        </div>
+        <p class="field-error font-mono text-mono-xs text-red-400" data-error-for="preview"></p>
+      </div>
+
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <label class="block font-mono text-mono-xs uppercase text-ink-muted">Video Resources</label>
+          <button type="button" id="add-video" class="font-mono text-mono-xs text-accent-b hover:underline">+ ADD VIDEO</button>
+        </div>
+        <div id="videos-list" class="space-y-3">
+          {initial.videos.map((video) => (
+            <div class="video-row space-y-2 border border-hairline bg-surface p-3" data-existing-src={video.existingSrc} data-existing-poster={video.poster?.existingPath ?? ''}>
+              <div class="flex gap-2">
+                <select class="video-provider bg-surface-raised border border-hairline px-3 font-mono text-xs text-ink">
+                  {VIDEO_PROVIDERS.map((p) => <option value={p} selected={p === video.provider}>{p.toUpperCase()}</option>)}
+                </select>
+                <input type="text" class="video-id flex-1 border border-hairline bg-transparent px-4 py-2 font-mono text-xs text-ink" placeholder="Video ID (YouTube/Vimeo)" value={video.id} />
+                <input type="text" class="video-title flex-1 border border-hairline bg-transparent px-4 py-2 font-mono text-xs text-ink" placeholder="Display Title" value={video.title} />
+                <button type="button" class="remove-video border border-hairline px-4 hover:bg-red-950/40 hover:text-red-400" aria-label="Remove video">×</button>
+              </div>
+              <div class="video-local-fields flex gap-2">
+                <input type="text" class="video-duration w-24 border border-hairline bg-transparent px-3 py-2 font-mono text-xs text-ink" placeholder="m:ss" value={video.duration} />
+                <input type="text" class="video-caption flex-1 border border-hairline bg-transparent px-3 py-2 font-mono text-xs text-ink" placeholder="Caption (optional)" value={video.caption} />
+                <label class="video-poster-label flex cursor-pointer items-center gap-2 border border-hairline px-3 font-mono text-xs text-ink-muted hover:border-accent-b">
+                  Poster
+                  <input type="file" accept="image/*" class="video-poster-input hidden" />
+                </label>
+                <label class="video-src-label flex cursor-pointer items-center gap-2 border border-hairline px-3 font-mono text-xs text-ink-muted hover:border-accent-b">
+                  File
+                  <input type="file" accept="video/*" class="video-src-input hidden" />
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
+        <template id="video-row-template">
+          <div class="video-row space-y-2 border border-hairline bg-surface p-3" data-existing-src="" data-existing-poster="">
+            <div class="flex gap-2">
+              <select class="video-provider bg-surface-raised border border-hairline px-3 font-mono text-xs text-ink">
+                {VIDEO_PROVIDERS.map((p) => <option value={p}>{p.toUpperCase()}</option>)}
+              </select>
+              <input type="text" class="video-id flex-1 border border-hairline bg-transparent px-4 py-2 font-mono text-xs text-ink" placeholder="Video ID (YouTube/Vimeo)" />
+              <input type="text" class="video-title flex-1 border border-hairline bg-transparent px-4 py-2 font-mono text-xs text-ink" placeholder="Display Title" />
+              <button type="button" class="remove-video border border-hairline px-4 hover:bg-red-950/40 hover:text-red-400" aria-label="Remove video">×</button>
+            </div>
+            <div class="video-local-fields flex gap-2">
+              <input type="text" class="video-duration w-24 border border-hairline bg-transparent px-3 py-2 font-mono text-xs text-ink" placeholder="m:ss" />
+              <input type="text" class="video-caption flex-1 border border-hairline bg-transparent px-3 py-2 font-mono text-xs text-ink" placeholder="Caption (optional)" />
+              <label class="video-poster-label flex cursor-pointer items-center gap-2 border border-hairline px-3 font-mono text-xs text-ink-muted hover:border-accent-b">
+                Poster
+                <input type="file" accept="image/*" class="video-poster-input hidden" />
+              </label>
+              <label class="video-src-label flex cursor-pointer items-center gap-2 border border-hairline px-3 font-mono text-xs text-ink-muted hover:border-accent-b">
+                File
+                <input type="file" accept="video/*" class="video-src-input hidden" />
+              </label>
+            </div>
+          </div>
+        </template>
+        <p class="field-error font-mono text-mono-xs text-red-400" data-error-for="videos"></p>
+      </div>
+    </section>
+
+    <!-- 04. LINKS -->
+    <section class="space-y-6">
+      <div class="flex items-center gap-3">
+        <span class="font-display text-h3 font-bold uppercase tracking-widest text-accent-b">04. LINKS</span>
+        <div class="h-px flex-1 bg-hairline"></div>
+      </div>
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div class="space-y-2">
+          <label class="font-mono text-mono-xs uppercase text-ink-muted" for="field-github">GitHub</label>
+          <input id="field-github" type="url" placeholder="https://github.com/..." value={initial.links.github} class="w-full border border-hairline bg-transparent px-4 py-3 font-mono text-sm text-ink focus:border-accent-b focus:outline-none" />
+        </div>
+        <div class="space-y-2">
+          <label class="font-mono text-mono-xs uppercase text-ink-muted" for="field-demo">Live Demo</label>
+          <input id="field-demo" type="url" placeholder="https://..." value={initial.links.demo} class="w-full border border-hairline bg-transparent px-4 py-3 font-mono text-sm text-ink focus:border-accent-b focus:outline-none" />
+        </div>
+        <div class="space-y-2">
+          <label class="font-mono text-mono-xs uppercase text-ink-muted" for="field-docs">Docs</label>
+          <input id="field-docs" type="url" placeholder="https://docs..." value={initial.links.docs} class="w-full border border-hairline bg-transparent px-4 py-3 font-mono text-sm text-ink focus:border-accent-b focus:outline-none" />
+        </div>
+      </div>
+      <p class="field-error font-mono text-mono-xs text-red-400" data-error-for="links"></p>
+    </section>
+
+    <!-- 05. DOWNLOADS -->
+    <section class="space-y-6">
+      <div class="flex items-center gap-3">
+        <span class="font-display text-h3 font-bold uppercase tracking-widest text-accent-b">05. DOWNLOADS</span>
+        <div class="h-px flex-1 bg-hairline"></div>
+      </div>
+      <div id="downloads-list" class="space-y-3">
+        {initial.downloads.map((d) => (
+          <div class="download-row flex gap-4 border border-hairline bg-surface p-4">
+            <div class="flex-1">
+              <label class="text-[9px] uppercase text-ink-muted">Label</label>
+              <input type="text" class="download-label w-full border-none bg-transparent p-0 font-mono text-sm text-ink focus:outline-none" value={d.label} />
+            </div>
+            <div class="flex-[2]">
+              <label class="text-[9px] uppercase text-ink-muted">URL</label>
+              <input type="text" class="download-url w-full border-none bg-transparent p-0 font-mono text-sm text-ink focus:outline-none" value={d.url} />
+            </div>
+            <div class="w-24">
+              <label class="text-[9px] uppercase text-ink-muted">File Size</label>
+              <input type="text" class="download-size w-full border-none bg-transparent p-0 font-mono text-sm text-ink focus:outline-none" value={d.size} />
+            </div>
+            <button type="button" class="remove-download self-center text-ink-muted hover:text-red-400" aria-label="Remove download">×</button>
+          </div>
+        ))}
+      </div>
+      <button type="button" id="add-download" class="flex w-full items-center justify-center gap-2 border border-dashed border-hairline py-4 font-mono text-xs uppercase text-ink-muted hover:bg-surface-raised">
+        + ADD FILE
+      </button>
+      <p class="field-error font-mono text-mono-xs text-red-400" data-error-for="downloads"></p>
+      <template id="download-row-template">
+        <div class="download-row flex gap-4 border border-hairline bg-surface p-4">
+          <div class="flex-1">
+            <label class="text-[9px] uppercase text-ink-muted">Label</label>
+            <input type="text" class="download-label w-full border-none bg-transparent p-0 font-mono text-sm text-ink focus:outline-none" />
+          </div>
+          <div class="flex-[2]">
+            <label class="text-[9px] uppercase text-ink-muted">URL</label>
+            <input type="text" class="download-url w-full border-none bg-transparent p-0 font-mono text-sm text-ink focus:outline-none" />
+          </div>
+          <div class="w-24">
+            <label class="text-[9px] uppercase text-ink-muted">File Size</label>
+            <input type="text" class="download-size w-full border-none bg-transparent p-0 font-mono text-sm text-ink focus:outline-none" />
+          </div>
+          <button type="button" class="remove-download self-center text-ink-muted hover:text-red-400" aria-label="Remove download">×</button>
+        </div>
+      </template>
+    </section>
+
+    <!-- 06. BODY -->
+    <section class="space-y-6">
+      <div class="flex items-center justify-between">
+        <div class="flex flex-1 items-center gap-3">
+          <span class="font-display text-h3 font-bold uppercase tracking-widest text-accent-b">06. BODY</span>
+          <div class="h-px flex-1 bg-hairline"></div>
+        </div>
+        <label class="ml-4 flex items-center gap-3">
+          <span class="font-mono text-[10px] uppercase text-ink-muted">Preview</span>
+          <input id="body-preview-toggle" type="checkbox" class="h-5 w-9 accent-accent-b" />
+        </label>
+      </div>
+      <textarea
+        id="field-body"
+        rows="15"
+        class="w-full resize-none border border-hairline bg-surface p-6 font-mono text-sm leading-relaxed text-ink focus:border-accent-b focus:outline-none"
+      >{initial.body}</textarea>
+      <div id="body-preview-pane" class="prose prose-invert hidden max-w-none border border-hairline bg-surface p-6"></div>
+    </section>
+  </form>
+
+  <div class="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between border-t border-hairline bg-surface px-6 py-4">
+    <div class="flex items-center gap-4">
+      <span class="font-mono text-xs text-ink-muted">
+        FILE_PATH: <span id="footer-path" class="text-ink">{displayPath}</span>
+      </span>
+    </div>
+    <div class="flex gap-4">
+      <button type="button" id="discard-button" class="font-mono text-xs uppercase text-ink-muted transition-colors hover:text-red-400">DISCARD</button>
+      <button type="submit" form="project-form" id="save-button" class="bg-signal px-8 py-2 font-mono text-xs font-bold uppercase text-bg-void transition-opacity hover:opacity-90">
+        SAVE TO DISK
+      </button>
+    </div>
+  </div>
+</StudioShell>
+
+<script src="../components/studio/project-form-client.ts"></script>

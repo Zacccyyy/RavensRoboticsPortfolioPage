@@ -1,0 +1,108 @@
+---
+// Chrome shared by /studio/index and /studio/[slug]: top bar, project-list
+// sidebar, and the safety banner. Everything under src/studio/ only becomes
+// a route at all in `astro dev` (see src/integrations/studio-dev.ts) — this
+// component isn't itself gated, but it never renders anywhere outside
+// those two pages, which are.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import StatusPill from '../StatusPill.astro';
+import type { STATUSES } from '../../content.config';
+
+interface Props {
+  title: string;
+  activeSlug?: string;
+  projects: Array<{ slug: string; title: string; status: (typeof STATUSES)[number]; date: Date }>;
+}
+
+const { title, activeSlug, projects } = Astro.props;
+
+function formatDotDate(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `${y}.${m}.${d}`;
+}
+---
+
+<BaseLayout title={`STUDIO — ${title}`}>
+  <div class="flex h-screen flex-col overflow-hidden">
+    <header
+      class="flex shrink-0 items-center justify-between border-b border-hairline bg-surface px-6 py-3"
+    >
+      <div class="flex items-center gap-4">
+        <span class="font-display text-h3 font-bold uppercase tracking-tighter text-ink">
+          RAVENS:ROBOTICS
+        </span>
+        <div class="h-4 w-px bg-hairline"></div>
+        <span class="font-mono text-mono-xs uppercase tracking-widest text-ink-muted">
+          Local_Content_Editor
+        </span>
+      </div>
+      <a
+        href="/studio"
+        class="font-mono text-mono-xs uppercase tracking-widest text-accent-b hover:text-ink transition-colors"
+      >
+        PROJECTS
+      </a>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+      <aside class="flex w-[280px] shrink-0 flex-col border-r border-hairline bg-surface">
+        <div class="border-b border-hairline p-4">
+          <a
+            href="/studio/new"
+            class="flex w-full items-center justify-center gap-2 bg-signal py-3 font-display text-body font-bold text-bg-void transition-opacity hover:opacity-90"
+          >
+            <span aria-hidden="true">+</span> NEW PROJECT
+          </a>
+        </div>
+
+        <nav class="flex-1 space-y-1 overflow-y-auto p-2" aria-label="Projects">
+          {
+            projects.map((project) => (
+              <a
+                href={`/studio/${project.slug}`}
+                class:list={[
+                  'block border-l-2 p-3 transition-colors',
+                  project.slug === activeSlug
+                    ? 'border-accent-b bg-surface-raised'
+                    : 'border-transparent hover:bg-surface-raised',
+                ]}
+              >
+                <div class="mb-2 flex items-start justify-between gap-2">
+                  <span
+                    class:list={[
+                      'font-display text-body font-bold uppercase text-ink',
+                      project.slug !== activeSlug && 'opacity-70',
+                    ]}
+                  >
+                    {project.title}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <StatusPill status={project.status} />
+                  <span class="font-mono text-mono-xs text-ink-muted">{formatDotDate(project.date)}</span>
+                </div>
+              </a>
+            ))
+          }
+          {
+            projects.length === 0 && (
+              <p class="p-3 font-mono text-mono-xs text-ink-muted">No projects yet.</p>
+            )
+          }
+        </nav>
+
+        <div class="border-t border-hairline bg-surface-raised p-4">
+          <div class="flex items-center gap-2 font-mono text-mono-xs uppercase tracking-widest leading-none text-red-400">
+            <span aria-hidden="true">⚠</span> LOCAL DEV ONLY — NOT DEPLOYED
+          </div>
+        </div>
+      </aside>
+
+      <main class="flex-1 overflow-y-auto bg-bg-void">
+        <slot />
+      </main>
+    </div>
+  </div>
+</BaseLayout>

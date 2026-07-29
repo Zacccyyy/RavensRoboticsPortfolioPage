@@ -1,0 +1,122 @@
+---
+// Dev-only project list. This file lives outside src/pages entirely, so
+// Astro's file-based router never discovers it — it only becomes a route
+// when src/integrations/studio-dev.ts calls injectRoute() from its
+// `astro:config:setup` hook, which only happens when `command === 'dev'`.
+// The `import.meta.env.DEV` check below is defense-in-depth on top of that,
+// not the guarantee itself.
+if (!import.meta.env.DEV) {
+  return Astro.redirect('/', 302);
+}
+
+import { getCollection } from 'astro:content';
+import StudioShell from '../components/studio/StudioShell.astro';
+import StatusPill from '../components/StatusPill.astro';
+import { computeOrphans } from '../integrations/studio-save';
+
+const allProjects = await getCollection('projects');
+const projects = allProjects
+  .map((p) => {
+    const orphans = computeOrphans(p.data.slug);
+    return {
+      slug: p.data.slug,
+      title: p.data.title,
+      tagline: p.data.tagline,
+      status: p.data.status,
+      category: p.data.category,
+      featured: p.data.featured,
+      date: p.data.date,
+      orphans,
+    };
+  })
+  .sort((a, b) => b.date.getTime() - a.date.getTime());
+---
+
+<StudioShell title="Projects" projects={projects}>
+  <div class="mx-auto max-w-4xl space-y-6 px-10 py-12">
+    <div class="flex items-center gap-3">
+      <span class="font-display text-h3 font-bold uppercase tracking-widest text-accent-b">
+        PROJECTS
+      </span>
+      <div class="h-px flex-1 bg-hairline"></div>
+    </div>
+
+    {
+      projects.length === 0 ? (
+        <p class="font-mono text-mono-xs uppercase text-ink-muted">
+          No projects yet — click NEW PROJECT in the sidebar to add one.
+        </p>
+      ) : (
+        <div class="overflow-x-auto border border-hairline">
+          <table class="w-full text-left">
+            <thead>
+              <tr class="border-b border-hairline bg-surface">
+                {['Title', 'Status', 'Category', 'Date', 'Featured', 'Orphaned files'].map((h) => (
+                  <th class="p-3 font-mono text-mono-xs uppercase tracking-widest text-ink-muted">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {projects.map((project) => (
+                <tr class="border-b border-hairline last:border-b-0 hover:bg-surface-raised">
+                  <td class="p-0">
+                    <a href={`/studio/${project.slug}`} class="block p-3">
+                      <span class="font-display font-bold uppercase text-ink">{project.title}</span>
+                      <span class="block font-body text-caption text-ink-muted">{project.tagline}</span>
+                    </a>
+                  </td>
+                  <td class="p-3">
+                    <StatusPill status={project.status} />
+                  </td>
+                  <td class="p-3 font-mono text-mono-xs uppercase text-ink-muted">{project.category}</td>
+                  <td class="p-3 font-mono text-mono-xs text-ink-muted">
+                    {project.date.toISOString().slice(0, 10)}
+                  </td>
+                  <td class="p-3 font-mono text-mono-xs text-ink-muted">{project.featured ? 'YES' : ''}</td>
+                  <td class="p-3">
+                    {project.orphans.content.length + project.orphans.video.length > 0 ? (
+                      <details class="orphan-details" data-slug={project.slug}>
+                        <summary class="cursor-pointer font-mono text-mono-xs uppercase text-red-400">
+                          {project.orphans.content.length + project.orphans.video.length} ORPHANED
+                        </summary>
+                        <div class="orphan-panel mt-2 max-w-xs space-y-1 border border-hairline bg-surface p-3">
+                          <p class="font-mono text-[10px] text-ink-muted">
+                            Not referenced by any field in this project's frontmatter. Removing a
+                            gallery/video/cover image in the editor never deletes the file itself —
+                            this is where you clean those up, on purpose, one at a time.
+                          </p>
+                          {project.orphans.content.map((f) => (
+                            <label class="flex items-center gap-2 font-mono text-[10px] text-ink">
+                              <input type="checkbox" class="orphan-checkbox" data-kind="content" value={f} />
+                              <span class="truncate">src/content/projects/{project.slug}/{f}</span>
+                            </label>
+                          ))}
+                          {project.orphans.video.map((f) => (
+                            <label class="flex items-center gap-2 font-mono text-[10px] text-ink">
+                              <input type="checkbox" class="orphan-checkbox" data-kind="video" value={f} />
+                              <span class="truncate">public/videos/{project.slug}/{f}</span>
+                            </label>
+                          ))}
+                          <button
+                            type="button"
+                            class="delete-orphans-button mt-1 border border-red-500 px-2 py-1 font-mono text-[10px] uppercase text-red-400 hover:bg-red-950/40"
+                          >
+                            Delete selected
+                          </button>
+                        </div>
+                      </details>
+                    ) : (
+                      <span class="font-mono text-mono-xs text-ink-muted">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
+  </div>
+</StudioShell>
+
+<script src="../components/studio/project-list-client.ts"></script>

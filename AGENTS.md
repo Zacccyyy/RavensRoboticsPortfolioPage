@@ -77,6 +77,32 @@ that fills it.
   command to re-encode it. Run it on its own with `npm run check:videos`.
   Local video should have a WebM alongside the MP4 (see `VideoEmbed.astro`)
   — re-encode both when a file trips this warning.
+- **WebM siblings are derived by extension rewrite, not stored in
+  frontmatter.** For a local `videos[]` entry, `VideoEmbed.astro` computes
+  the WebM path as `video.src.replace(/\.mp4$/, '.webm')` — there is no
+  `videos[].webm` field; the sibling is only ever a same-directory file that
+  happens to share the MP4's basename. `VideoEmbed.astro` checks the
+  sibling's existence at build time (`fs.existsSync`) and only emits the
+  WebM `<source>` when it's actually there, so a video added via the studio
+  editor — which uploads a single MP4 — degrades to MP4-only rather than
+  shipping a `<source>` that 404s for every WebM-capable browser.
+  `scripts/check-video-sizes.mjs` reports a missing sibling too, as an
+  informational notice (not a warning) alongside the `ffmpeg` command to
+  generate one.
+
+  This convention is **not** symmetric with the hover-preview loop:
+  `ProjectCard.astro`'s `<video data-preview-video>` only ever emits an MP4
+  `<source>` for `preview.src` — it has no WebM handling at all. A stray
+  `preview-loop.webm` sitting next to `preview-loop.mp4` is a genuine
+  orphan today, not a missed optimisation, and the studio's orphan detector
+  (`computeOrphans` in `src/integrations/studio-save.ts`) correctly flags it
+  as one — it only exempts a `.webm` sibling of a `videos[]` entry's `.mp4`,
+  not of `preview.src`. If `ProjectCard.astro` ever grows the same
+  WebM-source handling `VideoEmbed.astro` has, that exemption and the
+  missing-sibling notice in `check-video-sizes.mjs` (currently scoped to
+  `kind: 'video'` only) both need to be extended to cover `preview.src` too
+  — three independent places that each have to know this convention exists,
+  because none of them can read it off the schema.
 - `videos[].provider: 'vimeo'` is implemented in `VideoEmbed.astro`
   (`lite-vimeo-embed`, same lazy-loading treatment as the YouTube branch)
   and was manually verified during development, but no committed project

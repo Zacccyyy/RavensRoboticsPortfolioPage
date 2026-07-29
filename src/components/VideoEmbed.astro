@@ -16,6 +16,8 @@
 // only youtube ones, which is a fine trade against a 404.
 import 'lite-youtube-embed/src/lite-yt-embed.css';
 import type { CollectionEntry } from 'astro:content';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 type Video = NonNullable<CollectionEntry<'projects'>['data']['videos']>[number];
 
@@ -25,7 +27,19 @@ interface Props {
 
 const { video } = Astro.props;
 
-const webmSrc = video.provider === 'local' ? video.src.replace(/\.mp4$/, '.webm') : undefined;
+// The WebM sibling is derived by rewriting the extension, not stored as its
+// own frontmatter field (see AGENTS.md's "WebM siblings" note) — so nothing
+// guarantees it actually exists. A video added via the studio uploads a
+// single MP4; without this check every WebM-capable browser would request
+// a sibling that was never generated, 404, and fall through to the MP4 —
+// playback survives, but every one of those is a wasted request. Checked at
+// build time (this frontmatter runs server-side) so the unresolved <source>
+// never reaches the browser at all.
+const webmCandidate = video.provider === 'local' ? video.src.replace(/\.mp4$/, '.webm') : undefined;
+const webmSrc =
+  webmCandidate && existsSync(fileURLToPath(new URL(`../../public${webmCandidate}`, import.meta.url)))
+    ? webmCandidate
+    : undefined;
 ---
 
 <div class="video-embed border border-hairline bg-black">

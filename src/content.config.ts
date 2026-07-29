@@ -10,6 +10,9 @@ import { glob } from 'astro/loaders';
 export const STATUSES = ['shipped', 'in-progress', 'concept', 'archived'] as const;
 export const CATEGORIES = ['software', 'hardware', 'robotics', 'build'] as const;
 export const CARD_SIZES = ['sm', 'md', 'lg'] as const;
+export const SUMMARY_MAX_LENGTH = 200;
+export const TAGS_MAX = 6;
+export const VIDEO_PROVIDERS = ['youtube', 'vimeo', 'local'] as const;
 
 /**
  * Produces a plain-English error for an invalid/missing enum value, naming
@@ -25,16 +28,22 @@ function enumError(field: string, allowed: readonly string[]) {
   };
 }
 
-const projects = defineCollection({
-  loader: glob({ pattern: '*/index.mdx', base: './src/content/projects' }),
-  schema: ({ image }) =>
-    z.object({
+// Extracted so the studio editor (src/studio/) can build the exact
+// same Zod schema outside of Astro's content-layer loader — passing its own
+// stub for `image()`, since during editing an image field is just the
+// authored relative-path string, not yet a resolved asset. This is what
+// keeps the editor's validation and this schema from ever drifting apart:
+// there is only one schema definition, not two hand-synced copies.
+export function projectSchema(image: () => z.ZodTypeAny) {
+  return z.object({
       title: z.string(),
       slug: z.string(),
       tagline: z.string(),
       summary: z
         .string()
-        .max(200, { error: '"summary" is too long. Keep it to 200 characters or fewer.' }),
+        .max(SUMMARY_MAX_LENGTH, {
+          error: `"summary" is too long. Keep it to ${SUMMARY_MAX_LENGTH} characters or fewer.`,
+        }),
       date: z.coerce.date(),
       status: z.enum(STATUSES, { error: enumError('status', STATUSES) }),
       category: z.enum(CATEGORIES, { error: enumError('category', CATEGORIES) }),
@@ -44,7 +53,7 @@ const projects = defineCollection({
         .default('md'),
       tags: z
         .array(z.string())
-        .max(6, { error: '"tags" has too many entries. Use 6 or fewer.' })
+        .max(TAGS_MAX, { error: `"tags" has too many entries. Use ${TAGS_MAX} or fewer.` })
         .default([]),
 
       cover: image().optional(),
@@ -76,17 +85,17 @@ const projects = defineCollection({
         .array(
           z.discriminatedUnion('provider', [
             z.object({
-              provider: z.literal('youtube'),
+              provider: z.literal(VIDEO_PROVIDERS[0]),
               id: z.string(),
               title: z.string(),
             }),
             z.object({
-              provider: z.literal('vimeo'),
+              provider: z.literal(VIDEO_PROVIDERS[1]),
               id: z.string(),
               title: z.string(),
             }),
             z.object({
-              provider: z.literal('local'),
+              provider: z.literal(VIDEO_PROVIDERS[2]),
               // Same rule as preview.src above: absolute /videos/... path
               // served from public/, not a relative one.
               src: z.string(),
@@ -129,7 +138,12 @@ const projects = defineCollection({
           error: '"accent" must be a hex color, e.g. "#7C5CFF".',
         })
         .optional(),
-    }),
+  });
+}
+
+const projects = defineCollection({
+  loader: glob({ pattern: '*/index.mdx', base: './src/content/projects' }),
+  schema: ({ image }) => projectSchema(image),
 });
 
 export const collections = { projects };
