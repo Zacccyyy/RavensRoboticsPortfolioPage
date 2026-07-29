@@ -59,6 +59,7 @@ const dateLabel = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'nume
               format="svg"
               loading="eager"
               fetchpriority="high"
+              transition:name={`cover-${data.slug}`}
               class="absolute inset-0 h-full w-full object-cover"
             />
           ) : (
@@ -71,6 +72,7 @@ const dateLabel = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'nume
               fit="cover"
               loading="eager"
               fetchpriority="high"
+              transition:name={`cover-${data.slug}`}
               class="absolute inset-0 h-full w-full object-cover"
             />
           )}
@@ -80,7 +82,10 @@ const dateLabel = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'nume
               <div class="mb-4">
                 <StatusPill status={data.status} />
               </div>
-              <h1 class="mb-4 font-display text-display-lg uppercase leading-none text-ink md:text-display-xl">
+              <h1
+                class="mb-4 font-display text-display-lg uppercase leading-none text-ink md:text-display-xl"
+                transition:name={`title-${data.slug}`}
+              >
                 {data.title}
               </h1>
               <p class="max-w-2xl border-l border-accent-a py-1 pl-6 font-body text-body-lg text-ink-muted">
@@ -95,7 +100,10 @@ const dateLabel = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'nume
             <div class="mb-4">
               <StatusPill status={data.status} />
             </div>
-            <h1 class="mb-4 font-display text-display-lg uppercase leading-none text-ink md:text-display-xl">
+            <h1
+              class="mb-4 font-display text-display-lg uppercase leading-none text-ink md:text-display-xl"
+              transition:name={`title-${data.slug}`}
+            >
               {data.title}
             </h1>
             <p class="max-w-2xl border-l border-accent-a py-1 pl-6 font-body text-body-lg text-ink-muted">

@@ -18,9 +18,19 @@ interface Props {
   project: CollectionEntry<'projects'>;
   eager?: boolean;
   class?: string;
+  /** Stagger index for the scroll-reveal delay (60ms * index) and, when
+   * unset, falls back to `eager` for the transition-name below. */
+  index?: number;
+  /** Whether this instance owns the view-transition names for its slug.
+   * A given `transition:name` must be unique per document — when a card
+   * ever renders twice (see the mobile featured rail in CardGrid.astro),
+   * exactly one instance may carry it, or Astro's client router aborts the
+   * transition on a duplicate name. Defaults to true; CardGrid explicitly
+   * sets it false on the rail's duplicate instance. */
+  enableTransitionNames?: boolean;
 }
 
-const { project, eager = false, class: className } = Astro.props;
+const { project, eager = false, class: className, index = 0, enableTransitionNames = true } = Astro.props;
 const { data } = project;
 
 type Variant = 'video' | 'gallery' | 'image' | 'text';
@@ -61,10 +71,16 @@ const TITLE_CLASS: Record<typeof data.cardSize, string> = {
 };
 ---
 
-<article class:list={['h-full', className]}>
+<article
+  class:list={['h-full', className]}
+  data-reveal
+  data-category={data.category}
+  style={`--reveal-delay: ${index * 60}ms`}
+>
   <a
     href={href}
-    class="gradient-border group relative flex h-full flex-col outline-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-a"
+    data-tilt-card
+    class="gradient-border gradient-border-sweep group relative flex h-full flex-col outline-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-a"
   >
     {
       variant === 'text' ? (
@@ -76,7 +92,10 @@ const TITLE_CLASS: Record<typeof data.cardSize, string> = {
             </span>
           </div>
           <div class="flex flex-1 flex-col justify-center">
-            <h3 class:list={['mb-4 font-display uppercase text-ink', TITLE_CLASS[data.cardSize]]}>
+            <h3
+              class:list={['mb-4 font-display uppercase text-ink', TITLE_CLASS[data.cardSize]]}
+              transition:name={enableTransitionNames ? `title-${data.slug}` : undefined}
+            >
               {data.title}
             </h3>
             <p class="max-w-[42ch] font-body text-body-sm text-ink-muted">{data.summary}</p>
@@ -97,7 +116,10 @@ const TITLE_CLASS: Record<typeof data.cardSize, string> = {
               </span>
             )}
           </div>
-          <h3 class:list={['font-display uppercase text-ink', TITLE_CLASS[data.cardSize]]}>
+          <h3
+            class:list={['font-display uppercase text-ink', TITLE_CLASS[data.cardSize]]}
+            transition:name={enableTransitionNames ? `title-${data.slug}` : undefined}
+          >
             {data.title}
           </h3>
           {data.cardSize === 'lg' && (
@@ -123,7 +145,8 @@ const TITLE_CLASS: Record<typeof data.cardSize, string> = {
               format="svg"
               loading={eager ? 'eager' : 'lazy'}
               fetchpriority={eager ? 'high' : 'auto'}
-              class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+              transition:name={enableTransitionNames ? `cover-${data.slug}` : undefined}
+              class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
             />
           ) : (
             <Picture
@@ -135,17 +158,22 @@ const TITLE_CLASS: Record<typeof data.cardSize, string> = {
               fit="cover"
               loading={eager ? 'eager' : 'lazy'}
               fetchpriority={eager ? 'high' : 'auto'}
-              class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+              transition:name={enableTransitionNames ? `cover-${data.slug}` : undefined}
+              class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
             />
           )}
           {hasPreview && data.preview && (
+            // No `autoplay`/CSS :hover trigger on purpose — gallery-interactions.ts
+            // owns playback (150ms hover-intent delay, touch inView play/pause,
+            // fully skipped under reduced motion). `preload="none"` means the
+            // browser fetches nothing here until that script calls .load().
             <video
-              class="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+              class="preview-video absolute inset-0 h-full w-full object-cover"
+              data-preview-video
               poster={data.preview.poster.src}
               muted
               loop
               playsinline
-              autoplay
               preload="none"
               aria-hidden="true"
               tabindex="-1"

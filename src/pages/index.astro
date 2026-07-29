@@ -47,3 +47,10 @@ const projects = (await getCollection('projects')).sort(
 
   <SiteFooter />
 </BaseLayout>
+
+<script>
+  // Gallery-only interaction layer (tilt, border sweep trigger, hover video
+  // preview, filter chips, scroll reveal fallback) — see src/scripts/gallery.ts.
+  // Astro bundles this per-page, so project detail pages never ship it.
+  import '../scripts/gallery.ts';
+</script>

@@ -100,6 +100,24 @@ that fills it.
   the bio/social copy already lives in `site.config.ts`, so it's mostly
   a layout job at that point, not a content one.
 
+## Accessibility notes
+
+- `CardGrid.astro`'s mobile featured-rail (`.featured-rail` / `.rail-item`)
+  uses `display: contents` to collapse into the desktop bento grid at `md:`
+  without duplicating any card markup — see the comment at the top of that
+  file for why. Verified against current Chromium (via Playwright,
+  `ariaSnapshot()`) that every card's role, heading, link, and image alt
+  text come through identically in both the mobile (real flex container)
+  and desktop (collapsed) states, with no elements dropped and tab order
+  matching DOM order. **Flag for the accessibility pass:** `display:
+  contents` has a history of a11y-tree bugs in older engines — pre-15.4
+  Safari and some older Firefox releases have shipped versions that drop a
+  `display: contents` element's children from the accessibility tree
+  entirely rather than exposing them as if the wrapper weren't there. This
+  hasn't been verified against Safari or Firefox directly (no access to
+  either engine in the environment this was built in) — worth a manual
+  VoiceOver/Safari pass before calling the rail done.
+
 ## Design tokens
 
 Defined in `src/styles/tokens.css`, consumed as Tailwind utility

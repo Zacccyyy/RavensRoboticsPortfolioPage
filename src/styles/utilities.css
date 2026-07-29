@@ -30,3 +30,65 @@
   background-origin: border-box;
   background-clip: padding-box, border-box;
 }
+
+/* Rotating "sweep" variant of the ring above, for the project card hover
+   state. Composes with .gradient-border rather than replacing it — same
+   fill/border rest state, same padding-box/border-box clip technique, only
+   the hover background-image swaps to a conic gradient so the ring appears
+   to rotate instead of sitting static.
+
+   This is NOT the pseudo-element + inset:-1px + z-index:-1 technique from
+   the component-sheet mockup: that gets clipped by the card's own
+   overflow-hidden and then painted behind the card's opaque background by
+   the negative z-index, so it never actually renders. Using background-clip
+   on the real element (as .gradient-border already does) keeps the sweep on
+   top of the fill and inside the card's own border-box, no pseudo-element
+   or negative stacking required.
+
+   --sweep-angle is a registered custom property so the browser can animate
+   it as an <angle> (a plain custom property can't be interpolated by
+   @keyframes). accent-a/accent-b repeats a third time to close the loop
+   without a visible seam at 0deg/360deg — still only the two brand colours,
+   not the four-stop rainbow the mockup used.
+
+   The `var(--sweep-angle, 0deg)` fallback below is load-bearing, not
+   decoration: without @property support, --sweep-angle is never set to
+   anything (nothing assigns it outside the animation this file registers),
+   and an unset custom property referenced via var() with no fallback makes
+   the whole declaration invalid at computed-value time. That doesn't fall
+   back to .gradient-border:hover's plain linear-gradient the way you'd
+   hope — background-image resolves to `none` outright, while this rule's
+   own `border-color: transparent` still applies (it doesn't touch the
+   custom property), so the border goes fully invisible on hover. Verified
+   both ways directly: dropping the @property block and the fallback
+   together reproduces exactly that break; the fallback alone (even with
+   @property still absent) is sufficient to get the static two-stop ring
+   back. Don't remove it as a "just tidying up" pass. */
+@property --sweep-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.gradient-border-sweep:hover,
+.gradient-border-sweep:focus-visible {
+  border-color: transparent;
+  background-image:
+    linear-gradient(var(--gradient-border-fill), var(--gradient-border-fill)),
+    conic-gradient(from var(--sweep-angle, 0deg), var(--color-accent-a), var(--color-accent-b), var(--color-accent-a));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .gradient-border-sweep:hover,
+  .gradient-border-sweep:focus-visible {
+    animation: gradient-border-sweep-rotate 2.4s linear infinite;
+  }
+}
+
+@keyframes gradient-border-sweep-rotate {
+  to {
+    --sweep-angle: 360deg;
+  }
+}

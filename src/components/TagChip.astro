@@ -1,7 +1,9 @@
 ---
-// A small filter/category chip. Presentational only in this pass — there is
-// no client-side JS yet, so `active` is a static prop, not live filter state.
-// Wiring these up to actually filter the grid is a later pass.
+// A filter/category chip. `active` sets the initial server-rendered state
+// (index.astro marks "All" active); after hydration, gallery.ts owns the
+// live state by toggling `aria-pressed` on click, and the selected-state
+// styling below keys off that attribute rather than a class, so JS only
+// ever needs to flip one attribute per chip.
 
 interface Props {
   label: string;
@@ -13,12 +15,25 @@ const { label, active = false } = Astro.props;
 
 <button
   type="button"
-  class:list={[
-    'whitespace-nowrap border px-4 py-2 font-mono text-mono uppercase tracking-widest transition-colors',
-    active
-      ? 'border-signal bg-signal text-bg-void'
-      : 'border-hairline text-ink-muted hover:border-hairline-bright hover:text-ink',
-  ]}
+  data-filter={label}
+  aria-pressed={active}
+  class="chip whitespace-nowrap border border-hairline px-4 py-2 font-mono text-mono uppercase tracking-widest text-ink-muted transition-colors hover:border-hairline-bright hover:text-ink"
 >
   {label}
 </button>
+
+<style>
+  /* Selected state: accent-a (#7C5CFF), per the design tokens' "structural
+     only" rule — this is a solid background with dark text on top, not
+     accent-a used as text-on-void, so it doesn't run into the WCAG AA
+     failure that rule exists to prevent (see tokens.css). */
+  .chip[aria-pressed='true'] {
+    border-color: var(--color-accent-a);
+    background-color: var(--color-accent-a);
+    color: var(--color-bg-void);
+  }
+  .chip[aria-pressed='true']:hover {
+    border-color: var(--color-accent-a);
+    color: var(--color-bg-void);
+  }
+</style>

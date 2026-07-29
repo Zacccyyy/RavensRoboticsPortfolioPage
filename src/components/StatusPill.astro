@@ -23,6 +23,12 @@ const DOT_CLASS: Record<Props['status'], string> = {
 };
 
 const isArchived = status === 'archived';
+// Only `in-progress` pulses — a live indicator for work actually underway.
+// `shipped`/`concept` are static metadata; an infinite 2s opacity loop on
+// them never stops and communicates nothing. The pulse itself is CSS
+// (.status-dot-pulse in global.css), wrapped in a reduced-motion query
+// there rather than relying on Tailwind's unconditional `animate-pulse`.
+const isPulsing = status === 'in-progress';
 ---
 
 <div
@@ -35,7 +41,7 @@ const isArchived = status === 'archived';
     isArchived ? (
       <span class="h-2 w-2 rounded-full border border-hairline" />
     ) : (
-      <span class={`h-2 w-2 animate-pulse rounded-full ${DOT_CLASS[status]}`} />
+      <span class:list={['h-2 w-2 rounded-full', DOT_CLASS[status], isPulsing && 'status-dot-pulse']} />
     )
   }
   <span class:list={['font-mono text-mono uppercase', isArchived ? 'text-ink-muted' : 'text-ink']}>

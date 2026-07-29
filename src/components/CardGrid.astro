@@ -25,12 +25,46 @@ const SPAN: Record<CollectionEntry<'projects'>['data']['cardSize'], string> = {
   md: 'md:col-span-1 md:row-span-2',
   sm: 'md:col-span-1 md:row-span-1',
 };
+
+// Featured projects get a second presentation on mobile: a horizontal
+// scroll-snap rail (one full card + a peek of the next) above the plain
+// stacked list. This is the SAME set of DOM nodes as the desktop bento
+// grid, not a duplicate render — each ProjectCard would otherwise carry a
+// `transition:name` and preload="none" video that appear exactly once in
+// the document, and a second copy of either breaks (duplicate
+// view-transition-name aborts the morph; a second <video> would double the
+// real network request once hovered/played).
+//
+// The trick: `.featured-rail` is `flex overflow-x-auto` on mobile and
+// `display: contents` from md: up — at that breakpoint it generates no box
+// of its own, so its ProjectCard children fall straight into the outer
+// grid as ordinary grid items, in the same DOM position (first, since
+// `featured` sorts first) they'd occupy if this wrapper didn't exist at
+// all. Desktop layout is therefore byte-for-byte what it was before this
+// wrapper was added.
+const featured = projects.filter((p) => p.data.featured);
+const rest = projects.filter((p) => !p.data.featured);
 ---
 
-<div class="grid grid-cols-1 gap-gutter md:grid-cols-3 md:auto-rows-[280px]">
+<div id="project-grid" class="flex flex-col gap-6 md:grid md:grid-cols-3 md:gap-gutter md:auto-rows-[280px]">
   {
-    projects.map((project, index) => (
-      <ProjectCard project={project} eager={index < 2} class={SPAN[project.data.cardSize]} />
-    ))
+    featured.length > 0 && (
+      <div class="featured-rail -mx-margin-mobile flex snap-x snap-mandatory gap-4 overflow-x-auto px-margin-mobile pb-2 md:contents md:mx-0 md:gap-0 md:overflow-visible md:px-0 md:pb-0">
+        {featured.map((project) => {
+          const index = projects.indexOf(project);
+          return (
+            <div class="rail-item h-[400px] w-[85%] shrink-0 snap-start md:contents md:h-auto md:w-auto">
+              <ProjectCard project={project} eager={index < 2} index={index} class={SPAN[project.data.cardSize]} />
+            </div>
+          );
+        })}
+      </div>
+    )
+  }
+  {
+    rest.map((project) => {
+      const index = projects.indexOf(project);
+      return <ProjectCard project={project} eager={index < 2} index={index} class={SPAN[project.data.cardSize]} />;
+    })
   }
 </div>
