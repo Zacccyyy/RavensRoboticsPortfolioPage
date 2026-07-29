@@ -61,7 +61,7 @@ const siteConfig: SiteConfig = {
     title: 'Ravens Robotics — Hardware & Software Projects',
     description:
       'A portfolio of robotics, hardware, and software builds: sensor systems, autonomous drones, embedded control loops, and more.',
-    siteUrl: 'https://example.com',
+    siteUrl: 'https://ravensrobotics.pages.dev',
     ogImage: '/og-default.png',
   },
   theme: {},
