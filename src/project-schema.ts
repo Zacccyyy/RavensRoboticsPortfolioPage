@@ -38,6 +38,25 @@ function enumError(field: string, allowed: readonly string[]) {
   };
 }
 
+/**
+ * Wraps an optional string schema (a URL, a regex-validated hex color) so an
+ * empty string is treated as "not provided" rather than an invalid value.
+ * `.optional()` alone only tolerates the key being *absent* — a present but
+ * empty string still hits the real validator underneath, and something
+ * like `z.url()` correctly rejects "" as not a URL. That distinction is
+ * invisible in a hand-written .mdx file (nobody types `demo: ""` on
+ * purpose), but Sveltia CMS's object widget writes exactly that for a
+ * blank optional sub-field instead of omitting the key — confirmed the
+ * hard way when a real save with blank Demo/Docs links broke the build.
+ * Stripping "" to undefined *before* the real schema runs keeps the
+ * specific, useful error message for a genuinely invalid non-empty value
+ * (e.g. `z.url()`'s complaint about a non-URL string) intact — this only
+ * short-circuits the one blank-string case.
+ */
+function optionalNonEmpty<T extends ZodType>(schema: T) {
+  return z.preprocess((value) => (value === '' ? undefined : value), schema.optional());
+}
+
 // Extracted so the studio editor (src/studio/) — and now the CMS config
 // generator (scripts/generate-cms-config.mjs) — can build the exact same
 // Zod schema outside of Astro's content-layer loader, passing their own
@@ -127,9 +146,9 @@ export function projectSchema<ImageSchema extends ZodType>(image: () => ImageSch
 
       links: z
         .object({
-          github: z.url().optional(),
-          demo: z.url().optional(),
-          docs: z.url().optional(),
+          github: optionalNonEmpty(z.url()),
+          demo: optionalNonEmpty(z.url()),
+          docs: optionalNonEmpty(z.url()),
         })
         .optional(),
 
@@ -143,11 +162,10 @@ export function projectSchema<ImageSchema extends ZodType>(image: () => ImageSch
         )
         .optional(),
 
-      accent: z
-        .string()
-        .regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, {
+      accent: optionalNonEmpty(
+        z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, {
           error: '"accent" must be a hex color, e.g. "#7C5CFF".',
-        })
-        .optional(),
+        }),
+      ),
   });
 }
