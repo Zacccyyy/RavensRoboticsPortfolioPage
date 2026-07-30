@@ -19,6 +19,15 @@ jobs:
 
       - run: npm ci
 
+      # Must run before `npm run build` — the build step regenerates
+      # config.yml automatically, which would make this check trivially
+      # pass regardless of what was actually committed. Checking the
+      # as-committed file first is the whole point: it catches a PR that
+      # changed the schema/template and forgot to regenerate before
+      # committing, or hand-edited config.yml directly.
+      - name: Check CMS config matches the schema
+        run: npm run check:cms-config
+
       - name: Type check (astro check)
         run: npm run check
 

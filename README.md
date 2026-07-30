@@ -94,6 +94,7 @@ npm run setup            # regenerate the OG image + print a fork checklist — 
 npm run check            # astro check — type errors
 npm run check:videos      # warns about oversized/missing-WebM-sibling video assets
 npm run check:links       # broken internal links, run against dist/ after a build
+npm run check:cms-config  # fails if public/admin/config.yml drifted from the schema
 ```
 
 ## Troubleshooting
@@ -125,6 +126,99 @@ the pre-commit hook installs via the `prepare` script, which only fires on
 
 **I want to see the design tokens.** `/styleguide`, in dev or in your
 deployed site (it's a real page, just excluded from the sitemap).
+
+## Optional: editing from a browser (Sveltia CMS)
+
+**Skip this whole section if you're forking the repo and don't want it** —
+delete `public/admin/` and nothing else changes. Everything else in this
+README, CONTENT.md, and the `/studio` editor works exactly the same with or
+without it.
+
+[Sveltia CMS](https://github.com/sveltia/sveltia-cms) is a git-backed editor
+that runs entirely as static files at `/admin` and talks to GitHub's API
+directly from your browser — no server of ours, no database, nothing to
+host or keep patched beyond the two files in `public/admin/`. The appeal
+over `/studio`: it works from any browser, on any machine, without cloning
+the repo — a phone in a pinch.
+
+`public/admin/config.yml` is a **generated file** —
+`scripts/generate-cms-config.mjs` produces it from
+`scripts/cms-config-template.mjs`, which imports its enum options and
+numeric limits (statuses, categories, card sizes, video providers, the
+summary/tags limits) directly from `src/project-schema.ts`, the same file
+`src/content.config.ts` and `/studio` build on. `npm run build` regenerates
+it automatically, and `npm run check:cms-config` (run in CI on every PR)
+fails if the committed file doesn't match what the template would produce,
+or if its field list disagrees with the schema's actual fields — so this
+can drift exactly as little as `/studio` can. **Never hand-edit
+`public/admin/config.yml`** — the header comment says so too, and the next
+build or CI run will just tell you it's wrong. Change
+`scripts/cms-config-template.mjs` instead, then run
+`node scripts/generate-cms-config.mjs`.
+
+The one thing genuinely not derived from the schema — because it has
+nothing to do with it — is which GitHub repo the CMS commits to.
+
+### Setup
+
+1. **If you forked this repo**, edit the `REPO` constant near the top of
+   `scripts/cms-config-template.mjs` — it currently points at
+   `Zacccyyy/RavensRoboticsPortfolioPage`. This is a real, committed value
+   like everything else in this template's Quickstart, not a placeholder;
+   change it to `<your-username>/<your-repo>`, then run
+   `node scripts/generate-cms-config.mjs` (or just `npm run build`) to
+   regenerate `config.yml` from it. Skipping this doesn't leak anything —
+   GitHub won't issue you a token scoped to a repo you don't own — it just
+   won't work until you fix it.
+2. **Generate a fine-grained personal access token**: go to
+   `github.com/settings/personal-access-tokens/new`, give it a name,
+   restrict **Repository access** to only this one repo, and under
+   **Permissions → Repository permissions**, set **Contents** to
+   **Read and write**. Nothing else needs a permission. Generate it and
+   copy the token — GitHub only shows it once.
+3. Visit `https://<your-site>/admin/`, click **Sign In Using Access
+   Token**, and paste it in. (There's also a **Sign In with GitHub**
+   button — that's the OAuth path, which needs a separate proxy server we
+   deliberately didn't set up; use the token option.)
+4. You're in. Every save commits directly to `main` — there's no draft
+   step (`publish_mode: simple` in `config.yml`), matching how `/studio`
+   already works.
+
+The token lives only in your browser (`localStorage`) and is sent only to
+`api.github.com` — Sveltia CMS has no backend of its own to send it to.
+Treat it like a password: it grants write access to this repo for as long
+as it's valid. Revoke it anytime from the same GitHub settings page.
+
+### Should you also put Cloudflare Access in front of `/admin`?
+
+Access (part of Cloudflare Zero Trust) can require its own login — email
+code, GitHub OAuth, whatever identity provider you connect — before a
+browser can load `/admin` *at all*, on top of the GitHub token check above.
+Free for up to 50 authenticated users on Cloudflare's Zero Trust free
+plan.
+
+**What it actually adds**, precisely: right now, `/admin` is publicly
+loadable by design — it's a login form, and GitHub's own permission check
+is what actually gates every write. Nobody can commit anything without a
+valid token scoped to this repo, whether or not the page is public. Adding
+Access doesn't strengthen that check at all; the two systems don't talk to
+each other. What it *does* close is a different, smaller risk: **anyone
+being able to load the page in the first place.** If Sveltia CMS's own
+code, or the unpkg CDN serving it, were ever compromised, a malicious
+version could run in the browser of *any* visitor who happens to open
+`/admin` — Access would mean only people who've already passed a second,
+independent login could ever reach that code at all.
+
+**For a solo maintainer on a public repo, I'd add it** — specifically
+because the cost is close to zero (a few minutes, free at this scale) for
+closing a real, if low-probability, class of risk (a compromised CMS
+bundle) that GitHub permissions alone genuinely cannot touch. It's not
+solving your main exposure — that's still entirely about who holds a valid
+token, which Access doesn't affect — so don't mistake it for a substitute
+for treating the token carefully. If you'd rather not manage a second
+login for your own single-user site, skipping it isn't a reckless choice
+either; you're relying on the same trust in Sveltia's supply chain that
+you're already extending to every other npm package this project uses.
 
 ## License
 

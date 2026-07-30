@@ -45,6 +45,22 @@ that fills it.
   `src/content/config.ts`. Astro 7 moved the content config to the src
   root; a file at the old `src/content/config.ts` path fails the build
   with a message telling you to move it.
+- The actual enums/limits/schema logic (`STATUSES`, `CATEGORIES`,
+  `CARD_SIZES`, `VIDEO_PROVIDERS`, `SUMMARY_MAX_LENGTH`, `TAGS_MAX`,
+  `projectSchema`) live in `src/project-schema.ts`, not
+  `content.config.ts` itself — `content.config.ts` just imports them and
+  does the `defineCollection()` call. The split exists because
+  `project-schema.ts` has zero dependency on the `astro:content` virtual
+  module, so it's importable from a plain `node` process; `content.config.ts`
+  is not (it imports `defineCollection` from `astro:content`, which only
+  resolves inside Astro/Vite). This is what lets
+  `scripts/generate-cms-config.mjs` and `scripts/check-cms-config.mjs`
+  (which produce/verify `public/admin/config.yml` — see README.md's
+  "Optional: editing from a browser" section) import the schema directly at
+  the CLI. If you add a field to `projectSchema`, also update
+  `scripts/cms-config-template.mjs` to match, or
+  `npm run check:cms-config` (run in CI) will fail — it cross-checks the
+  two field lists, not just the enum values.
 - Each project is a colocated folder:
   `src/content/projects/<slug>/index.mdx`, with every image asset that
   entry references (`cover`, `gallery[].src`, `preview.poster`, video

@@ -7,11 +7,12 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "node scripts/check-video-sizes.mjs && astro build",
+    "build": "node scripts/check-video-sizes.mjs && node scripts/generate-cms-config.mjs && astro build",
     "setup": "node scripts/setup.mjs",
     "check": "astro check",
     "check:videos": "node scripts/check-video-sizes.mjs",
     "check:links": "node scripts/check-links.mjs",
+    "check:cms-config": "node scripts/check-cms-config.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "prepare": "husky"

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Public by design, unlike /studio (see README.md's "Optional: editing
+         from a browser" section) — this page is a harmless login form until
+         someone presents a GitHub credential with write access to this
+         repo. Still no reason to invite search engines to it. -->
+    <meta name="robots" content="noindex" />
+    <title>Content — Ravens Robotics</title>
+    <!-- Pinned to an exact version, not @latest — an unpinned CDN import
+         means a tool update could change behavior (or break) on a page load
+         you didn't initiate. Bump this deliberately; check
+         https://github.com/sveltia/sveltia-cms/releases before doing so.
+
+         integrity is the actual point, not just the version pin: it's a
+         SHA-384 hash of this exact file's bytes, so unpkg (or anyone
+         between it and this page) serving anything else — a compromised
+         release, a tampered CDN response — makes the browser refuse to
+         run it, instead of silently executing whatever showed up. It MUST
+         be recomputed on every version bump; the old hash will not match
+         the new file and the script will simply fail to load (safe, but
+         confusing if you forget why). Recompute with:
+           curl -sL https://unpkg.com/@sveltia/cms@<version>/dist/sveltia-cms.js | openssl dgst -sha384 -binary | openssl base64 -A -->
+    <script
+      src="https://unpkg.com/@sveltia/cms@0.175.1/dist/sveltia-cms.js"
+      integrity="sha384-b6o5APwsjm1LTXxPrq5Mas+fKyiR0Ywwpojq8pP4iDdw0dqrcCH55dUIcqBgYloL"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body></body>
+</html>

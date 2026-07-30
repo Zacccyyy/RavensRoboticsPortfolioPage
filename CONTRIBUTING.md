@@ -13,11 +13,12 @@ portfolio content" belong in your own fork, not this repo.
   and why. This is a template other people fork and rely on staying stable —
   a feature that's a great fit for your own site might not be a good default
   for everyone else's.
-- Run the checks locally before pushing — the same three CI runs on every PR:
+- Run the checks locally before pushing — the same ones CI runs on every PR:
   ```
-  npm run check        # astro check — type errors
-  npm run build         # full production build
-  npm run check:links   # internal link integrity, against the built dist/
+  npm run check:cms-config  # public/admin/config.yml matches the schema
+  npm run check              # astro check — type errors
+  npm run build               # full production build
+  npm run check:links          # internal link integrity, against the built dist/
   ```
 
 ## Ground rules (see AGENTS.md for the full detail)
