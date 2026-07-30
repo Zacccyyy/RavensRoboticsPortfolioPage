@@ -1,0 +1,77 @@
+# Read automatically by Cloudflare Pages — no dashboard configuration
+# needed. Rules apply additively: a request matching more than one path
+# pattern below inherits headers from ALL matching blocks, and a header
+# set by more than one matching block gets its values joined with a comma
+# rather than the more specific block winning outright (Cloudflare's own
+# docs: "An incoming request which matches multiple rules' URL patterns
+# will inherit all rules' headers... If a header is applied twice... the
+# values are joined with a comma separator."). A comma-joined
+# Content-Security-Policy is not a second policy the browser picks between
+# — it is nonsense the browser can't parse as one policy. That's why the
+# /admin/* block below explicitly removes the site-wide CSP first
+# (`! Content-Security-Policy-Report-Only`) before setting its own —
+# Cloudflare's documented mechanism for exactly this "different subpath
+# needs a different value" case — rather than relying on it to be
+# "overridden".
+#
+# CSP ships in Report-Only mode for now: it reports violations to the
+# browser console / a securitypolicyviolation listener without blocking
+# anything, so a wrong or missing origin fails visibly instead of quietly
+# breaking the YouTube embed, the lightbox, or /admin. Flip both
+# `Content-Security-Policy-Report-Only` lines below to
+# `Content-Security-Policy` once verified against the deployed site (see
+# the checks run before this file's introducing commit) — do not remove
+# the `-Report-Only` suffix without re-verifying, and re-verify again after
+# adding any new external resource (a new video provider, a CMS media
+# backend, etc).
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), usb=()
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://www.youtube.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://i.ytimg.com https://i.vimeocdn.com; font-src 'self'; connect-src 'self' https://vimeo.com; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'none'; manifest-src 'none'; upgrade-insecure-requests
+
+# style-src needs 'unsafe-inline': Shiki (MDX code fences) writes a
+# per-token `style="color:#..."` attribute, and ProjectCard.astro writes a
+# per-card `style="--reveal-delay:...ms"` for its stagger animation —
+# neither is hashable (they vary per build/per card), and Astro's own
+# native CSP feature (security.csp in astro.config.mjs) explicitly doesn't
+# support Shiki for the same reason, so this isn't a gap worth chasing
+# further. script-src needs no such exception — every project script is
+# either bundled to /_astro/*.js (script-src 'self' covers it) or, for the
+# two that Vite's build was inlining as a bare <script type="module"> at
+# their actual (tiny) compiled size, moved to public/scripts/*.js and
+# referenced with a real is:inline src= instead (see the comments in
+# public/scripts/parallax.js and public/scripts/downloads-disclosure.js) —
+# so script-src carries zero sha256 hashes to keep in sync by hand.
+#
+# https://www.youtube.com is the lite-youtube-embed fallback iframe-API
+# script some browsers need; https://www.youtube-nocookie.com and
+# https://player.vimeo.com are the actual embed iframes; i.ytimg.com/
+# i.vimeocdn.com are thumbnail images; vimeo.com is lite-vimeo-embed's own
+# oembed/thumbnail JSON fetch. No committed project currently uses a vimeo
+# entry (see AGENTS.md), but VIDEO_PROVIDERS supports it and the component
+# code path is real, so it's covered here rather than left to break
+# silently the first time someone's fork uses it.
+
+/admin/*
+  ! Content-Security-Policy-Report-Only
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' blob: data: https://avatars.githubusercontent.com; media-src blob:; frame-src blob:; connect-src 'self' https://unpkg.com https://api.github.com blob: data:; manifest-src blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+# Sveltia CMS's own documented CSP baseline (sveltiacms.app/en/docs/security):
+# style-src 'unsafe-inline' (its own explicit statement: script-src needs
+# neither unsafe-eval nor unsafe-inline), font-src cdn.jsdelivr.net (their
+# v0.174+ font provider, replacing the old Google Fonts origin), img-src/
+# media-src/frame-src/manifest-src blob: (its editor preview pane), and
+# connect-src/script-src unpkg.com (script bundle plus, per their docs,
+# "check for the latest version and retrieve additional dependencies" from
+# the same origin). https://api.github.com is added on top — not in
+# Sveltia's generic example, but required for this repo's actual backend
+# config (backend.name: 'github' in scripts/cms-config-template.mjs): every
+# read/write of repo content goes through GitHub's REST API. avatars.
+# githubusercontent.com is added for the same reason (GitHub user avatars
+# in the editor UI) — unconfirmed against Sveltia's docs directly, flagged
+# here so a Report-Only violation for that specific origin is expected and
+# understood rather than a surprise, not silently "fixed" by guessing wide.
