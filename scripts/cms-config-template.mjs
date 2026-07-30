@@ -43,6 +43,23 @@ export function buildCmsConfig() {
     media_folder: '',
     public_folder: '',
 
+    // Without this, saving with a blank `required: false` field (e.g. an
+    // unfilled links.demo/links.docs) writes '' into the frontmatter
+    // instead of omitting the key — confirmed the hard way when a real
+    // save broke the build (z.url() correctly rejects '' as not a URL,
+    // even though the field is optional). src/project-schema.ts's
+    // optionalNonEmpty() is still the real defence — it protects
+    // hand-edited files and /studio too, which this option can't reach —
+    // but this is what keeps the *files themselves* clean going forward,
+    // so a saved '' doesn't sit there looking indistinguishable from a
+    // deliberately-set empty value. Per Sveltia's own source
+    // (serialize.js), this omits each empty optional field independently;
+    // a parent object with at least one non-empty child (e.g. `links` with
+    // `github` set but `demo`/`docs` blank) is still preserved.
+    output: {
+      omit_empty_optional_fields: true,
+    },
+
     collections: [
       {
         name: 'projects',

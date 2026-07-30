@@ -12,6 +12,8 @@ backend:
   publish_mode: simple
 media_folder: ""
 public_folder: ""
+output:
+  omit_empty_optional_fields: true
 collections:
   - name: projects
     label: Projects
