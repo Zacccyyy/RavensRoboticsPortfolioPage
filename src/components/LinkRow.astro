@@ -102,43 +102,4 @@ const hasDownloads = Boolean(downloads?.length);
   )
 }
 
-<script>
-  function initDownloadsDisclosures() {
-    document.querySelectorAll<HTMLElement>('[data-downloads]').forEach((root) => {
-      const trigger = root.querySelector<HTMLButtonElement>('[data-downloads-trigger]');
-      const panel = root.querySelector<HTMLElement>('[data-downloads-panel]');
-      const chevron = root.querySelector<SVGElement>('[data-downloads-chevron]');
-      if (!trigger || !panel) return;
-
-      // Progressive enhancement: the panel ships open in the server-rendered
-      // HTML (so downloads are reachable even if this script never runs),
-      // then gets collapsed here once JS is confirmed to be running.
-      const setOpen = (open: boolean) => {
-        trigger.setAttribute('aria-expanded', String(open));
-        panel.hidden = !open;
-        chevron?.style.setProperty('transform', open ? 'rotate(180deg)' : 'rotate(0deg)');
-      };
-
-      setOpen(false);
-
-      trigger.addEventListener('click', () => {
-        setOpen(trigger.getAttribute('aria-expanded') !== 'true');
-      });
-
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && trigger.getAttribute('aria-expanded') === 'true') {
-          setOpen(false);
-          trigger.focus();
-        }
-      });
-
-      document.addEventListener('click', (e) => {
-        if (trigger.getAttribute('aria-expanded') === 'true' && !root.contains(e.target as Node)) {
-          setOpen(false);
-        }
-      });
-    });
-  }
-
-  initDownloadsDisclosures();
-</script>
+<script src="/scripts/downloads-disclosure.js" is:inline></script>
