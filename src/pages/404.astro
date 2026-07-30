@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+---
+
+<BaseLayout title="404 — Not Found" description="This page doesn't exist.">
+  <SiteHeader />
+
+  <main class="pb-24 pt-32">
+    <section class="mx-auto max-w-max-width px-margin-mobile py-24 text-center md:px-margin-desktop">
+      <h1 class="font-display text-display-lg uppercase leading-none text-ink md:text-display-xl">404</h1>
+      <p class="mx-auto mt-8 max-w-md font-body text-body-lg text-ink-muted">
+        This page doesn't exist — it may have moved, or never existed at all.
+      </p>
+      <a
+        href="/#work"
+        class="focus-ring mt-12 inline-flex items-center gap-2 border border-hairline px-6 py-3 font-mono text-mono uppercase tracking-widest text-ink transition-colors hover:border-hairline-bright hover:text-ink"
+      >
+        <span aria-hidden="true">&larr;</span> Back to the work
+      </a>
+    </section>
+  </main>
+
+  <SiteFooter />
+</BaseLayout>
