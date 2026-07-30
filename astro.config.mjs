@@ -22,6 +22,16 @@ export default defineConfig({
     }),
   ],
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    // Explicit, not just relying on Vite's default: a sourcemap bakes in
+    // absolute build-machine paths (/Users/<name>/...), which for a build
+    // run on a personal laptop means a real name in public build output.
+    // Verified clean without this (grep -ril "/Users/" dist/ finds
+    // nothing) because the default is already false — this pins it so a
+    // later `sourcemap: true` added for debugging some other issue can't
+    // silently reintroduce the leak.
+    build: {
+      sourcemap: false,
+    },
   }
 });
