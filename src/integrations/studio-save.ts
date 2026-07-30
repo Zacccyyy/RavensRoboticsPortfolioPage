@@ -96,6 +96,34 @@ function decodeDataUrl(dataUrl: string): { mime: string; buffer: Buffer } {
  * down to MAX_IMAGE_WIDTH wide (preserving aspect ratio) if the original is
  * wider. SVGs are left untouched — they're vector, "wide" doesn't apply.
  * Returns the relative frontmatter path, e.g. "./cover.jpg".
+ *
+ * Two things happen to every raster image on the way through, neither
+ * optional, both load-bearing:
+ *
+ * 1. `.rotate()` with no arguments, *before* anything else — sharp does
+ *    NOT auto-apply EXIF orientation on its own (verified directly: a
+ *    landscape-stored 800×400 buffer tagged orientation=6 comes out
+ *    800×400 through a bare `.resize()`, not the 400×800 a viewer should
+ *    see). A phone photo shot in portrait is almost always stored as
+ *    landscape pixels plus an orientation tag saying "rotate on display" —
+ *    it looks right today only because browsers currently honor that tag.
+ *    Once metadata is stripped (below), that tag is gone; if it was never
+ *    *applied* first, the photo is permanently sideways with no metadata
+ *    left to fix it. `.rotate()` bakes the correct pixel orientation in
+ *    before that tag disappears. This matches Astro's own build-time
+ *    sharp service (`node_modules/astro/dist/assets/services/sharp.js`),
+ *    which calls the identical `result.rotate()` for the same reason —
+ *    this function was missing it.
+ * 2. Metadata — EXIF, GPS, IPTC — is stripped, *after* rotation is baked
+ *    in, by simply never calling `.withMetadata()`. This is sharp's actual
+ *    default behavior (confirmed directly: a GPS/camera/artist-tagged
+ *    source produces zero exiftool-readable tags through a bare
+ *    `.toBuffer()`), not something this code has to ask for — but it's
+ *    written out explicitly here, and not left to be an accident a future
+ *    edit could quietly reintroduce by adding `.withMetadata()` for an
+ *    unrelated reason. See CONTENT.md's "Photo metadata" section and the
+ *    pre-commit hook (scripts/check-staged-images-for-gps.mjs) for the
+ *    other two layers of the same protection.
  */
 async function writeImage(
   upload: { dataUrl: string; filename: string },
@@ -112,12 +140,22 @@ async function writeImage(
   if (ext === 'svg') {
     writeFileSync(destAbs, buffer);
   } else {
-    const image = sharp(buffer);
-    const metadata = await image.metadata();
-    const pipeline =
-      metadata.width && metadata.width > MAX_IMAGE_WIDTH
-        ? image.resize({ width: MAX_IMAGE_WIDTH })
-        : image;
+    const metadata = await sharp(buffer).metadata();
+    // metadata.width/height are the RAW stored dimensions and don't
+    // account for orientation — a portrait phone photo is commonly stored
+    // as wide-and-short with a rotate-on-display tag, so the axis that's
+    // actually "wide" once displayed correctly can be the reported
+    // height, not width. Orientations 5–8 are the four that involve a 90°
+    // turn (EXIF spec), which is exactly when width/height swap on display.
+    const rotated = Boolean(metadata.orientation && metadata.orientation >= 5 && metadata.orientation <= 8);
+    const displayWidth = rotated ? metadata.height : metadata.width;
+
+    // No withMetadata() call anywhere here — that omission is what strips
+    // EXIF/GPS/IPTC; see the function comment above.
+    let pipeline = sharp(buffer).rotate();
+    if (displayWidth && displayWidth > MAX_IMAGE_WIDTH) {
+      pipeline = pipeline.resize({ width: MAX_IMAGE_WIDTH });
+    }
     writeFileSync(destAbs, await pipeline.toBuffer());
   }
 
