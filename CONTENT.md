@@ -218,3 +218,47 @@ ffmpeg -i public/videos/<slug>/<file>.mp4 -vf format=yuv420p -c:v libx264 -crf 3
 Re-encode both files (MP4 and its WebM sibling, if it has one) when
 `check:videos` flags something — a stale, larger sibling left behind after
 only re-encoding the MP4 defeats the point of having it.
+
+## Photo metadata
+
+Most phone cameras embed GPS coordinates, device make/model, and sometimes
+your name (Artist/Copyright tags) directly in every photo they take. If
+you're photographing your own home, workbench, or garage for a project
+write-up — which is exactly what this template is for — that photo reveals
+where you live unless something strips it first. This is handled
+automatically, three separate ways, so it doesn't depend on remembering to
+do it by hand:
+
+1. **Build time.** Astro's own image pipeline (the `sharp` service that
+   generates every AVIF/WebP/resized variant of a `cover`/`gallery`/poster
+   image) never calls `.withMetadata()`, so none of those variants carry
+   EXIF/GPS/IPTC — this is sharp's default, not something the build has to
+   ask for. There's one extra wrinkle: Vite's static-asset handling also
+   copies the *original, unprocessed* source file into the build output
+   under its own hashed filename, purely so it has a stable URL to resolve
+   `image()` metadata against — no page actually links to that copy (every
+   real `<Image>`/`<Picture>` usage requests a specific width, which
+   resolves to a different, already-clean file), but it still physically
+   exists in the deployed output. `npm run build` runs
+   `scripts/strip-dist-image-metadata.mjs` right after `astro build`
+   specifically to catch that copy too — it sweeps every image in the built
+   output and strips metadata unconditionally, so the guarantee holds
+   regardless of which part of the pipeline produced a given file.
+2. **Committing by hand.** A pre-commit hook
+   (`scripts/check-staged-images-for-gps.mjs`) checks every staged
+   `.jpg`/`.jpeg`/`.tiff`/`.heic` for embedded GPS coordinates and **rejects
+   the commit outright** if it finds any — same fail-closed pattern as the
+   file-size hook. It tells you which file and gives you the fix:
+   ```
+   exiftool -gps:all= -overwrite_original <file>
+   ```
+3. **Uploading through `/studio` or the CMS.** The upload handler
+   (`writeImage()` in `src/integrations/studio-save.ts`) runs every raster
+   upload through the same rotate-then-strip sharp pipeline as the build —
+   metadata never reaches disk in the first place, so there's nothing to
+   catch later.
+
+None of this touches photo *content* — only the invisible metadata riding
+along with it. If you want to double-check any file yourself:
+[exiftool](https://exiftool.org/) (`brew install exiftool`) will show you
+everything a photo carries: `exiftool -GPS:all -Make -Model yourphoto.jpg`.
