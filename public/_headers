@@ -31,7 +31,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Permissions-Policy: geolocation=(), camera=(), microphone=(), usb=()
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://www.youtube.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://i.ytimg.com https://i.vimeocdn.com; font-src 'self'; connect-src 'self' https://vimeo.com; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'none'; manifest-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://www.youtube.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://i.ytimg.com https://i.vimeocdn.com; font-src 'self' data:; connect-src 'self' https://vimeo.com; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'none'; manifest-src 'none'; upgrade-insecure-requests
 
 # style-src needs 'unsafe-inline': Shiki (MDX code fences) writes a
 # per-token `style="color:#..."` attribute, and ProjectCard.astro writes a
@@ -55,10 +55,17 @@
 # entry (see AGENTS.md), but VIDEO_PROVIDERS supports it and the component
 # code path is real, so it's covered here rather than left to break
 # silently the first time someone's fork uses it.
+#
+# font-src needs `data:` on top of 'self': confirmed via a real
+# Report-Only violation against the deployed site (Playwright,
+# securitypolicyviolation listener) that @fontsource-variable's generated
+# CSS embeds a `data:font/woff2;base64,...` fallback face alongside the
+# real self-hosted .woff2 files — not a CDN, just a scheme font-src has to
+# allow explicitly.
 
 /admin/*
   ! Content-Security-Policy-Report-Only
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' blob: data: https://avatars.githubusercontent.com; media-src blob:; frame-src blob:; connect-src 'self' https://unpkg.com https://api.github.com blob: data:; manifest-src blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' blob: data: https://avatars.githubusercontent.com; media-src blob:; frame-src blob:; connect-src 'self' https://unpkg.com https://api.github.com https://www.githubstatus.com blob: data:; manifest-src blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 
 # Sveltia CMS's own documented CSP baseline (sveltiacms.app/en/docs/security):
 # style-src 'unsafe-inline' (its own explicit statement: script-src needs
@@ -75,3 +82,9 @@
 # in the editor UI) — unconfirmed against Sveltia's docs directly, flagged
 # here so a Report-Only violation for that specific origin is expected and
 # understood rather than a surprise, not silently "fixed" by guessing wide.
+# https://www.githubstatus.com is confirmed, not guessed: a real
+# Report-Only violation against the deployed /admin page (Playwright)
+# showed Sveltia itself fetching
+# https://www.githubstatus.com/api/v2/status.json (from its own bundle,
+# sveltia-cms.js:497) — presumably to surface a "GitHub is down" notice in
+# the editor UI when relevant.
