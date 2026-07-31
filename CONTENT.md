@@ -262,3 +262,54 @@ None of this touches photo *content* — only the invisible metadata riding
 along with it. If you want to double-check any file yourself:
 [exiftool](https://exiftool.org/) (`brew install exiftool`) will show you
 everything a photo carries: `exiftool -GPS:all -Make -Model yourphoto.jpg`.
+
+## Video metadata
+
+Phone and action-cam video carries the same kind of GPS/device metadata as
+photos — a `videos[]` clip or `preview.src` hover loop can reveal exactly
+where and on what it was recorded, same risk as an unstripped photo. This
+gets the same three-layer treatment as photo metadata above, using
+[ffmpeg](https://ffmpeg.org/) (`brew install ffmpeg`) instead of sharp/
+exiftool, since video containers aren't something either of those tools
+handles:
+
+1. **Uploading through `/studio`.** The upload handler (`resolveVideoFile()`
+   in `src/integrations/studio-save.ts`) runs every video upload through
+   `ffmpeg -map 0:v -map 0:a? -map_metadata -1 -c copy` before writing it —
+   a lossless re-mux (no re-encode) that drops all container/stream
+   metadata and keeps only the video and (if present) audio streams. That
+   last part matters: some cameras (GoPro-style action cams especially)
+   store GPS as its own timed metadata *stream*, not a container-level tag
+   — `-map_metadata -1` alone wouldn't touch a stream, only tags, so the
+   upload handler explicitly maps in just the video/audio streams rather
+   than copying everything the input happens to contain.
+2. **Committing by hand.** A pre-commit hook
+   (`scripts/check-staged-video-metadata.mjs`) checks every staged
+   `.mp4`/`.webm` for GPS or device-identifying tags (via `ffprobe`, matched
+   by pattern rather than an exact tag list — the same location/make/model
+   information shows up under different keys depending on camera and
+   muxer, e.g. a plain `location` tag alongside Apple's
+   `com.apple.quicktime.location.ISO6709`) and **rejects the commit
+   outright** if it finds any, same fail-closed pattern as the photo-GPS
+   hook. Unlike that hook, this one requires `ffmpeg`/`ffprobe` to be
+   installed rather than working with a pure-JS fallback — ffmpeg is
+   already a required tool for anyone touching video in this repo (the
+   re-encode commands above), so this isn't a new dependency for that
+   case; missing ffmpeg fails the commit closed rather than silently
+   skipping the check. It tells you which file and gives you the fix:
+   ```
+   ffmpeg -i clip.mp4 -map 0:v -map 0:a? -map_metadata -1 -c copy clip.stripped.mp4
+   mv clip.stripped.mp4 clip.mp4
+   ```
+3. **Already committed.** `npm run check:videos` also reports (warns, same
+   as its size check — see the media policy above) any already-committed
+   `preview.src`/local `videos[].src` that still carries GPS/device
+   metadata, with the same fix command. This only runs if `ffmpeg` is
+   installed; if it isn't, this one check is skipped with a note rather
+   than failing the build, since it's informational, not the enforcement
+   layer — the pre-commit hook is.
+
+If you want to double-check any file yourself:
+`ffprobe -v quiet -print_format json -show_format -show_streams yourvideo.mp4`
+will show you everything, including any per-stream tags a plain
+`exiftool`-style view might miss.

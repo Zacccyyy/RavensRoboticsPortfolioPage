@@ -9,6 +9,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
+import { probeVideoMetadata, isFfprobeAvailable } from './video-metadata.mjs';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const PROJECTS_DIR = join(ROOT, 'src/content/projects');
@@ -43,6 +44,20 @@ function webmCommand(publicPath) {
   return `ffmpeg -i "public${publicPath}" -c:v libvpx-vp9 -crf 32 -b:v 0 -an "public${webmPath}"`;
 }
 
+// Same command as scripts/check-staged-video-metadata.mjs recommends —
+// strip to a sibling temp file (ffmpeg can't overwrite its own input),
+// then move it over the original. Keeps the output extension matching the
+// input so ffmpeg's muxer auto-detection (based on the output filename)
+// still picks the right container.
+function stripMetadataCommand(publicPath) {
+  const ext = publicPath.slice(publicPath.lastIndexOf('.'));
+  const strippedPath = `public${publicPath}.stripped${ext}`;
+  return (
+    `ffmpeg -i "public${publicPath}" -map 0:v -map 0:a? -map_metadata -1 -c copy "${strippedPath}" && ` +
+    `mv "${strippedPath}" "public${publicPath}"`
+  );
+}
+
 const slugs = existsSync(PROJECTS_DIR)
   ? readdirSync(PROJECTS_DIR, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
@@ -51,6 +66,15 @@ const slugs = existsSync(PROJECTS_DIR)
 
 const warnings = [];
 const notices = [];
+const ffprobeAvailable = isFfprobeAvailable();
+if (!ffprobeAvailable) {
+  notices.push(
+    '  ffprobe (part of ffmpeg) is not installed, so committed video could not be checked for' +
+      '\n    GPS/device metadata this run. This is informational, not a failure — the pre-commit' +
+      '\n    hook (scripts/check-staged-video-metadata.mjs) still catches it on new commits' +
+      '\n    regardless. Install ffmpeg to also check what is already committed.',
+  );
+}
 
 for (const slug of slugs) {
   const mdxPath = join(PROJECTS_DIR, slug, 'index.mdx');
@@ -83,6 +107,17 @@ for (const slug of slugs) {
       );
     }
 
+    if (ffprobeAvailable) {
+      const metadata = probeVideoMetadata(filePath);
+      if (metadata?.hasSensitiveMetadata) {
+        const tags = [...metadata.gps, ...metadata.device].map(([key, value]) => `${key}=${value}`).join(', ');
+        warnings.push(
+          `  ${slug}: ${kind} "${src}" carries GPS/device metadata (${tags}).\n` +
+            `    Strip it: ${stripMetadataCommand(src)}`,
+        );
+      }
+    }
+
     // Informational, not a warning: a missing WebM sibling is a missed
     // optimisation, not broken anything — VideoEmbed.astro already guards
     // against serving a <source> for one that doesn't exist (see its
@@ -104,7 +139,7 @@ for (const slug of slugs) {
 }
 
 if (warnings.length > 0) {
-  console.warn('\n[check-video-sizes] Oversized video assets:\n');
+  console.warn('\n[check-video-sizes] Video asset warnings (size and/or metadata):\n');
   console.warn(warnings.join('\n\n'));
   console.warn('\nThis is a warning, not a build failure — see AGENTS.md.\n');
 } else {
