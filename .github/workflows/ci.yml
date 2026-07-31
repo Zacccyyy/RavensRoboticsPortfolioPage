@@ -19,6 +19,14 @@ jobs:
 
       - run: npm ci
 
+      # Fails the build on any high/critical advisory in the dependency
+      # tree. This is a public repo with a script-tag CDN dependency
+      # (Sveltia CMS, see public/admin/index.html) on top of the usual npm
+      # graph — supply chain is the realistic attack surface for a static
+      # site with no server-side code of its own to exploit.
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
       # Must run before `npm run build` — the build step regenerates
       # config.yml automatically, which would make this check trivially
       # pass regardless of what was actually committed. Checking the

@@ -1,0 +1,17 @@
+# Weekly npm dependency updates, grouped into a single PR rather than one
+# PR per package — this repo has ~15 direct dependencies plus transitives;
+# one-PR-per-bump would be more noise than signal for a solo-maintained
+# public repo. `npm audit --audit-level=high` in .github/workflows/ci.yml
+# still runs on every PR (including these), so a grouped update that
+# introduces a real high/severity advisory fails CI rather than merging
+# quietly.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm-dependencies:
+        patterns:
+          - '*'
