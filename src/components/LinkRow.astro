@@ -5,6 +5,7 @@
 // clicking outside closes it, and focus returns to the trigger either way.
 // The old mockup version only opened on CSS :hover, so it had none of that.
 import type { CollectionEntry } from 'astro:content';
+import { externalLinkAttrs } from '../utils/links';
 
 interface Props {
   links?: CollectionEntry<'projects'>['data']['links'];
@@ -21,6 +22,7 @@ const hasDownloads = Boolean(downloads?.length);
       {links?.github && (
         <a
           href={links.github}
+          {...externalLinkAttrs(links.github)}
           class="focus-ring flex w-full items-center justify-center gap-3 border border-ink px-8 py-4 font-mono text-mono uppercase text-ink transition-colors hover:bg-ink hover:text-bg-void sm:w-auto"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -32,6 +34,7 @@ const hasDownloads = Boolean(downloads?.length);
       {links?.demo && (
         <a
           href={links.demo}
+          {...externalLinkAttrs(links.demo)}
           class="focus-ring flex w-full items-center justify-center gap-3 bg-signal px-8 py-4 font-mono text-mono font-bold uppercase text-bg-void transition-[filter] hover:brightness-110 sm:w-auto"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -43,6 +46,7 @@ const hasDownloads = Boolean(downloads?.length);
       {links?.docs && (
         <a
           href={links.docs}
+          {...externalLinkAttrs(links.docs)}
           class="focus-ring flex w-full items-center justify-center gap-3 border border-ink px-8 py-4 font-mono text-mono uppercase text-ink transition-colors hover:bg-ink hover:text-bg-void sm:w-auto"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -86,6 +90,7 @@ const hasDownloads = Boolean(downloads?.length);
               <a
                 href={file.url}
                 download
+                {...externalLinkAttrs(file.url)}
                 class:list={[
                   'focus-ring flex items-center justify-between gap-4 pb-2 text-ink-muted transition-colors hover:text-ink',
                   index < (downloads?.length ?? 0) - 1 && 'border-b border-hairline',

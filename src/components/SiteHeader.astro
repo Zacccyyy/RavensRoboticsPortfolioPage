@@ -5,6 +5,7 @@
 // project detail pages included), not just as a same-page anchor.
 
 import siteConfig from '../../site.config';
+import { externalLinkAttrs } from '../utils/links';
 ---
 
 <header class="fixed top-0 z-50 w-full border-b border-hairline bg-bg-void/80 backdrop-blur-md">
@@ -23,6 +24,7 @@ import siteConfig from '../../site.config';
         siteConfig.social.map((link) => (
           <a
             href={link.url}
+            {...externalLinkAttrs(link.url)}
             class="focus-ring font-mono text-mono uppercase tracking-widest text-ink-muted transition-colors hover:text-ink"
           >
             {link.label}

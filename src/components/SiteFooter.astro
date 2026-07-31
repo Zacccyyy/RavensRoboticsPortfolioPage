@@ -1,5 +1,6 @@
 ---
 import siteConfig from '../../site.config';
+import { externalLinkAttrs } from '../utils/links';
 
 const currentYear = new Date().getFullYear();
 const copyrightYears =
@@ -17,7 +18,11 @@ const copyrightYears =
       <div class="flex gap-4 font-mono text-mono uppercase">
         {
           siteConfig.social.map((link) => (
-            <a href={link.url} class="focus-ring text-ink-muted transition-colors hover:text-ink">
+            <a
+              href={link.url}
+              {...externalLinkAttrs(link.url)}
+              class="focus-ring text-ink-muted transition-colors hover:text-ink"
+            >
               {link.label}
             </a>
           ))
