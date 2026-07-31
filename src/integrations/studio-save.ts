@@ -6,6 +6,7 @@
 // studio-dev.ts's `astro:config:setup` hook). Either way, this never runs
 // in a production build.
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
@@ -172,13 +173,45 @@ async function resolveImage(
   return writeImage(input, destDirAbs, baseName, relPrefix);
 }
 
+/**
+ * Writes an uploaded video into `PUBLIC_VIDEOS_DIR/<slug>/<baseName>.<ext>`,
+ * stripping GPS/device metadata on the way through — the video half of
+ * writeImage()'s image stripping, for the same reason (see CONTENT.md's
+ * "Video metadata" section and scripts/check-staged-video-metadata.mjs,
+ * the pre-commit layer of the same protection for anyone committing video
+ * by hand instead of uploading it here).
+ *
+ * ffmpeg can't read and overwrite the same path in one invocation, so the
+ * upload is written to a sibling temp file first, then ffmpeg reads that
+ * and writes the real destination; the temp file is removed either way.
+ * `-map 0:v -map 0:a?` keeps only the video stream and an audio stream if
+ * one exists — deliberately narrower than just `-map_metadata -1 -c copy`
+ * on its own, which would still copy any OTHER stream the input has
+ * (e.g. a GoPro-style timed "gpmd" GPS data track lives in its own stream,
+ * not in container-level metadata, and `-map_metadata -1` alone doesn't
+ * touch it). `-c copy` re-muxes without re-encoding — lossless and fast,
+ * since nothing here needs the pixels touched, only the metadata dropped.
+ */
 function resolveVideoFile(input: FileInput, slug: string): string {
   if (input.kind === 'existing') return input.path;
   const { buffer } = decodeDataUrl(input.dataUrl);
   const destDir = join(PUBLIC_VIDEOS_DIR, slug);
   mkdirSync(destDir, { recursive: true });
   const filename = slugifyName(input.filename, 'video') + (input.filename.match(/\.[a-z0-9]+$/i)?.[0] ?? '.mp4');
-  writeFileSync(join(destDir, filename), buffer);
+  const destAbs = join(destDir, filename);
+  const tmpAbs = `${destAbs}.upload-tmp`;
+
+  writeFileSync(tmpAbs, buffer);
+  try {
+    execFileSync(
+      'ffmpeg',
+      ['-y', '-i', tmpAbs, '-map', '0:v', '-map', '0:a?', '-map_metadata', '-1', '-c', 'copy', destAbs],
+      { stdio: 'pipe' },
+    );
+  } finally {
+    rmSync(tmpAbs, { force: true });
+  }
+
   return `/videos/${slug}/${filename}`;
 }
 
