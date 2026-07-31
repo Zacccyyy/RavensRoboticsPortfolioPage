@@ -14,16 +14,22 @@
 # needs a different value" case — rather than relying on it to be
 # "overridden".
 #
-# CSP ships in Report-Only mode for now: it reports violations to the
-# browser console / a securitypolicyviolation listener without blocking
-# anything, so a wrong or missing origin fails visibly instead of quietly
-# breaking the YouTube embed, the lightbox, or /admin. Flip both
-# `Content-Security-Policy-Report-Only` lines below to
-# `Content-Security-Policy` once verified against the deployed site (see
-# the checks run before this file's introducing commit) — do not remove
-# the `-Report-Only` suffix without re-verifying, and re-verify again after
-# adding any new external resource (a new video provider, a CMS media
-# backend, etc).
+# CSP is enforced (not Report-Only) below. It shipped in Report-Only mode
+# first, was verified against the real deployed site with Playwright (a
+# securitypolicyviolation listener on the homepage, a hovered project card
+# to actually trigger the preview video, a real click to open the
+# PhotoSwipe lightbox, and a load of /admin) — which is how the two real
+# gaps in the comments further down (font-src's `data:`,
+# /admin's connect-src githubstatus.com origin) were actually found, not
+# guessed. Two rounds of that (fix → redeploy → re-verify) came back with
+# zero violations before this was enforced.
+#
+# If you add a new external resource — a new video provider, a CMS media
+# backend, an embed — switch the relevant line back to
+# `Content-Security-Policy-Report-Only` first, verify against the deployed
+# site the same way, then switch back to enforced. Don't skip straight to
+# enforced with an untested addition; a CSP that breaks the site is worse
+# than none.
 
 /*
   X-Content-Type-Options: nosniff
@@ -31,7 +37,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Permissions-Policy: geolocation=(), camera=(), microphone=(), usb=()
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://www.youtube.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://i.ytimg.com https://i.vimeocdn.com; font-src 'self' data:; connect-src 'self' https://vimeo.com; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'none'; manifest-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://www.youtube.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://i.ytimg.com https://i.vimeocdn.com; font-src 'self' data:; connect-src 'self' https://vimeo.com; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'none'; manifest-src 'none'; upgrade-insecure-requests
 
 # style-src needs 'unsafe-inline': Shiki (MDX code fences) writes a
 # per-token `style="color:#..."` attribute, and ProjectCard.astro writes a
@@ -64,8 +70,8 @@
 # allow explicitly.
 
 /admin/*
-  ! Content-Security-Policy-Report-Only
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' blob: data: https://avatars.githubusercontent.com; media-src blob:; frame-src blob:; connect-src 'self' https://unpkg.com https://api.github.com https://www.githubstatus.com blob: data:; manifest-src blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' blob: data: https://avatars.githubusercontent.com; media-src blob:; frame-src blob:; connect-src 'self' https://unpkg.com https://api.github.com https://www.githubstatus.com blob: data:; manifest-src blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 
 # Sveltia CMS's own documented CSP baseline (sveltiacms.app/en/docs/security):
 # style-src 'unsafe-inline' (its own explicit statement: script-src needs
