@@ -62,6 +62,17 @@
 # code path is real, so it's covered here rather than left to break
 # silently the first time someone's fork uses it.
 #
+# UNVERIFIED LIVE: the youtube/vimeo origins above are source-read only
+# (lite-youtube-embed/lite-vimeo-embed's own code), not click-tested
+# against a real embed on the deployed site — no committed project
+# currently has one. (SKYWARDEN briefly had a real YouTube video ID during
+# an earlier testing pass, but that's not in the current committed
+# content.) First time a videos[] entry with provider: youtube or vimeo
+# actually ships, load that project page with devtools open and confirm
+# the embed loads with zero CSP violations before trusting this policy
+# covers it — same as the /admin origins below, an assumption stated
+# outright beats one left silent.
+#
 # font-src needs `data:` on top of 'self': confirmed via a real
 # Report-Only violation against the deployed site (Playwright,
 # securitypolicyviolation listener) that @fontsource-variable's generated
