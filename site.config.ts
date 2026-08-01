@@ -31,6 +31,28 @@ export interface ThemeOverrides {
   signal?: string;
 }
 
+export interface AboutStackGroup {
+  /** Mono section label rendered above the group's chips, e.g. "HARDWARE". */
+  label: string;
+  /** Short capability/tool phrases, rendered as TagChip tags beneath the label. */
+  items: string[];
+}
+
+export interface AboutConfig {
+  /** Page headline, rendered at the display type scale. */
+  heading: string;
+  /** 2-3 paragraphs of bio copy, rendered left-aligned at reading measure. */
+  intro: string[];
+  /** Short "what I work on" phrases, rendered as tags under the heading. */
+  focus: string[];
+  /** Grouped capabilities -- mono section label + tag chips per group. */
+  stack: AboutStackGroup[];
+  /** One line on what's on the bench right now, rendered as a mono callout. */
+  currently: string;
+  /** Prose inviting contact -- not a raw email address, that's rendered separately. */
+  contact: string;
+}
+
 export interface SiteConfig {
   name: string;
   shortName: string;
@@ -41,6 +63,7 @@ export interface SiteConfig {
   social: SocialLink[];
   seo: SeoDefaults;
   theme: ThemeOverrides;
+  about: AboutConfig;
   copyrightHolder: string;
   foundedYear: number;
 }
@@ -65,6 +88,20 @@ const siteConfig: SiteConfig = {
     ogImage: '/og-default.png',
   },
   theme: {},
+  about: {
+    heading: 'About',
+    intro: [
+      'PLACEHOLDER -- replace with your own bio. This paragraph introduces who you are and what you build.',
+      'PLACEHOLDER -- a second paragraph: background, how you got into this work, or your general approach.',
+    ],
+    focus: ['PLACEHOLDER FOCUS AREA', 'PLACEHOLDER FOCUS AREA'],
+    stack: [
+      { label: 'HARDWARE', items: ['PLACEHOLDER TOOL'] },
+      { label: 'SOFTWARE', items: ['PLACEHOLDER TOOL'] },
+    ],
+    currently: 'PLACEHOLDER -- one line on what is actively on the bench right now.',
+    contact: 'PLACEHOLDER -- a sentence inviting contact, e.g. reach out to collaborate or talk shop.',
+  },
   copyrightHolder: 'Ravens Robotics',
   foundedYear: 2024,
 };

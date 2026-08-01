@@ -49,6 +49,28 @@ export interface ThemeOverrides {
   signal?: string;
 }
 
+export interface AboutStackGroup {
+  /** Mono section label rendered above the group's chips, e.g. "HARDWARE". */
+  label: string;
+  /** Short capability/tool phrases, rendered as TagChip tags beneath the label. */
+  items: string[];
+}
+
+export interface AboutConfig {
+  /** Page headline, rendered at the display type scale. */
+  heading: string;
+  /** 2-3 paragraphs of bio copy, rendered left-aligned at reading measure. */
+  intro: string[];
+  /** Short "what I work on" phrases, rendered as tags under the heading. */
+  focus: string[];
+  /** Grouped capabilities -- mono section label + tag chips per group. */
+  stack: AboutStackGroup[];
+  /** One line on what's on the bench right now, rendered as a mono callout. */
+  currently: string;
+  /** Prose inviting contact -- not a raw email address, that's rendered separately. */
+  contact: string;
+}
+
 export interface SiteConfig {
   /** Full display name — footer wordmark, header logo, OG title, JSON-LD Person.name. */
   name: string;
@@ -72,6 +94,11 @@ export interface SiteConfig {
    * escape hatch for forks that want their own accent colours without
    * editing tokens.css directly, not something you need to fill in. */
   theme: ThemeOverrides;
+  /** Content for the /about page (src/pages/about.astro) -- see AboutConfig
+   * above for what each field renders as. Nothing personal may live in
+   * src/pages/about.astro itself; this is the only place that page reads
+   * copy from. */
+  about: AboutConfig;
   /** Footer copyright line: "© {foundedYear}–{current year} {copyrightHolder}". */
   copyrightHolder: string;
   /** First year this site (or the work it showcases) existed — drives the
@@ -98,6 +125,20 @@ const siteConfig: SiteConfig = {
     ogImage: '/og-default.png',
   },
   theme: {},
+  about: {
+    heading: 'About',
+    intro: [
+      'A paragraph about you: what you build, what tools/stack you favor, what kind of projects show up here.',
+      'A second paragraph -- background, how you got into this, or your general approach to a project.',
+    ],
+    focus: ['Embedded systems', 'Sensor fusion', 'Rapid prototyping'],
+    stack: [
+      { label: 'HARDWARE', items: ['ESP32', 'Raspberry Pi 5', 'PCB design'] },
+      { label: 'SOFTWARE', items: ['Python', 'TypeScript', 'Astro'] },
+    ],
+    currently: 'Building a multi-sensor weather station for the roof array.',
+    contact: 'Open to collaboration, questions about a build, or just talking shop -- reach out any time.',
+  },
   copyrightHolder: 'Your Name',
   foundedYear: new Date().getFullYear(),
 };
