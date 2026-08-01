@@ -1,0 +1,86 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import TagChip from '../components/TagChip.astro';
+import { externalLinkAttrs } from '../utils/links';
+import siteConfig from '../../site.config';
+
+const { about } = siteConfig;
+
+const title = `${about.heading} — ${siteConfig.name}`;
+const description = about.intro[0];
+
+// Mirrors the Person/WebSite pattern index.astro uses for its own JSON-LD
+// (see personSchema/websiteSchema there) -- a ProfilePage wrapping the
+// same Person entity, scoped to this route's own URL.
+const profileSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfilePage',
+  name: title,
+  url: new URL('/about', siteConfig.seo.siteUrl).toString(),
+  mainEntity: {
+    '@type': 'Person',
+    name: siteConfig.name,
+    description: about.intro[0],
+  },
+};
+
+const mailtoHref = `mailto:${siteConfig.email}`;
+---
+
+<BaseLayout title={title} description={description} structuredData={profileSchema}>
+  <SiteHeader />
+
+  <main class="pb-24 pt-32">
+    <section class="mx-auto mb-16 max-w-max-width px-margin-mobile md:px-margin-desktop">
+      <h1 class="mb-6 font-display text-display-lg uppercase text-ink md:text-display-xl">
+        {about.heading}
+      </h1>
+
+      {about.focus.length > 0 && (
+        <div class="mb-10 flex flex-wrap gap-3">
+          {about.focus.map((phrase) => <TagChip label={phrase} interactive={false} />)}
+        </div>
+      )}
+
+      <div class="max-w-[70ch] space-y-6 font-body text-body-lg text-ink-muted">
+        {about.intro.map((paragraph) => <p>{paragraph}</p>)}
+      </div>
+
+      <div class="mt-10 max-w-[70ch] border border-hairline bg-surface-raised px-6 py-4">
+        <p class="font-mono text-mono uppercase tracking-widest text-ink-muted">
+          <span class="text-ink">Currently</span> — {about.currently}
+        </p>
+      </div>
+
+      <div class="mt-16 max-w-[70ch] border-t border-hairline">
+        {about.stack.map((group, i) => (
+          <div class:list={['py-8', i > 0 && 'border-t border-hairline']}>
+            <h2 class="mb-4 font-mono text-mono uppercase tracking-widest text-ink-muted">
+              {group.label}
+            </h2>
+            <div class="flex flex-wrap gap-3">
+              {group.items.map((item) => <TagChip label={item} interactive={false} />)}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div class="mt-16 max-w-[70ch] border-t border-hairline pt-8">
+        <p class="font-body text-body text-ink-muted">
+          {about.contact}{' '}
+          <a
+            href={mailtoHref}
+            {...externalLinkAttrs(mailtoHref)}
+            class="focus-ring text-ink underline decoration-hairline-bright underline-offset-4 hover:text-ink"
+          >
+            {siteConfig.email}
+          </a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</BaseLayout>

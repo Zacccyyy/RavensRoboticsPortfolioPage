@@ -4,23 +4,35 @@
 // live state by toggling `aria-pressed` on click, and the selected-state
 // styling below keys off that attribute rather than a class, so JS only
 // ever needs to flip one attribute per chip.
+//
+// `interactive` defaults to true for that filter-chip use case. Set it to
+// false for a purely decorative tag with no click/filter behavior (e.g.
+// the About page's capability/focus tags) -- renders a <span> instead of
+// a <button>, with no aria-pressed/data-filter/hover-as-button affordance,
+// since there's nothing here for a screen reader or keyboard user to
+// interact with.
 
 interface Props {
   label: string;
   active?: boolean;
+  interactive?: boolean;
 }
 
-const { label, active = false } = Astro.props;
+const { label, active = false, interactive = true } = Astro.props;
+const Tag = interactive ? 'button' : 'span';
 ---
 
-<button
-  type="button"
-  data-filter={label}
-  aria-pressed={active}
-  class="focus-ring chip whitespace-nowrap border border-hairline px-4 py-2 font-mono text-mono uppercase tracking-widest text-ink-muted transition-colors hover:border-hairline-bright hover:text-ink"
+<Tag
+  type={interactive ? 'button' : undefined}
+  data-filter={interactive ? label : undefined}
+  aria-pressed={interactive ? active : undefined}
+  class:list={[
+    'chip whitespace-nowrap border border-hairline px-4 py-2 font-mono text-mono uppercase tracking-widest text-ink-muted',
+    interactive && 'focus-ring transition-colors hover:border-hairline-bright hover:text-ink',
+  ]}
 >
   {label}
-</button>
+</Tag>
 
 <style>
   /* Selected state: accent-a (#7C5CFF), per the design tokens' "structural
