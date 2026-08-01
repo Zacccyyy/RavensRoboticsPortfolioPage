@@ -1,0 +1,59 @@
+---
+// Build-time system readout strip: project counts by status plus an
+// absolute "last deploy" build date, derived entirely from real collection
+// data so a fork with a different project count/status mix renders its own
+// accurate numbers with zero edits to this file.
+import { getCollection } from 'astro:content';
+import { STATUSES } from '../project-schema';
+
+const projects = await getCollection('projects');
+
+// Iterates STATUSES (the schema's own source of truth) rather than a
+// hardcoded status list, so adding/renaming a status in project-schema.ts
+// can't desync this from StatusPill.astro or the filter chips. Zero-count
+// statuses are omitted entirely -- never render "0 CONCEPT".
+const statusCounts = STATUSES.map((status) => ({
+  label: status.replace(/-/g, ' ').toUpperCase(),
+  count: projects.filter((project) => project.data.status === status).length,
+})).filter((entry) => entry.count > 0);
+
+const readoutCounts = [
+  { value: String(projects.length), label: 'PROJECTS' },
+  ...statusCounts.map((entry) => ({ value: String(entry.count), label: entry.label })),
+];
+
+// Absolute date, not a relative "Nd AGO" age: this page is fully static
+// (no output: 'server', no client JS), so whatever this renders gets
+// baked into the HTML once at build time and never recomputes. A
+// relative age computed here would freeze at "0m AGO" forever --
+// Date.now() and this timestamp are captured microseconds apart in the
+// same build, so the diff is always ~0, and nothing on a static page
+// ever re-evaluates it after the HTML ships. An absolute date stays
+// honest no matter how long the built HTML sits between deploys.
+const buildDate = new Date().toISOString().slice(0, 10);
+---
+
+<div class="mt-10 border-t border-hairline pt-6 md:mt-12">
+  <ul class="flex flex-wrap items-baseline gap-x-3 gap-y-2 font-mono text-mono-xs tracking-widest text-ink-muted">
+    {readoutCounts.map((item) => (
+      <li class="readout-item whitespace-nowrap">
+        <span class="text-ink">{item.value}</span> {item.label}
+      </li>
+    ))}
+    <li class="readout-item whitespace-nowrap">
+      LAST DEPLOY <span class="text-ink">{buildDate}</span>
+    </li>
+  </ul>
+</div>
+
+<style>
+  /* Middot separator between items, not before the first one. Living on
+     the item that follows it (rather than as a standalone separator
+     node) keeps "· LABEL" atomic so flex-wrap never strands a lone dot
+     at the end of a line. */
+  .readout-item:not(:first-child)::before {
+    content: '·';
+    margin-inline-end: 0.75rem;
+    color: var(--color-ink-muted);
+  }
+</style>
