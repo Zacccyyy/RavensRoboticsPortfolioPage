@@ -55,7 +55,8 @@ Forking it means replacing that real content with your own.
    cd <your-fork>
    npm install
    ```
-2. **Edit `site.config.ts`** with your own name, bio, and links.
+2. **Edit `site.config.ts`** with your own name, bio, links, and the
+   `about` object (used by the `/about` page).
    `site.config.example.ts` documents every field if you want the reference,
    but the file you actually edit is `site.config.ts` itself.
 3. **Delete the example projects.** This is the one step that's easy to

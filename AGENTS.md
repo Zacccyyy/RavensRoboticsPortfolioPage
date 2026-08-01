@@ -140,7 +140,14 @@ that fills it.
 ## Pages & navigation
 
 - `/` — home (`src/pages/index.astro`): hero, filter chips, project grid,
-  footer.
+  footer. The hero also renders `src/components/SystemReadout.astro`, a
+  build-time-derived readout strip (project count, per-status counts, an
+  absolute "last deploy" build date) — no hardcoded numbers; it iterates
+  `STATUSES` from `src/project-schema.ts` and `getCollection('projects')`
+  so a fork's own project count/status mix renders correctly untouched.
+  The date is absolute (not a "relative age") because this site is fully
+  static with zero client JS -- a relative age computed at build time
+  would freeze the instant it's baked into the HTML and never update.
 - `/projects/<slug>/` — project detail route (`src/pages/projects/[slug].astro`).
   Per-project OG image, JSON-LD `CreativeWork`, gallery/lightbox, video embeds.
 - `/styleguide` — design token reference. Excluded from the sitemap
@@ -156,12 +163,21 @@ that fills it.
   clean up after the fact. Never move these files into `src/pages/` "for
   consistency"; that would make them real routes that ship. See
   CONTENT.md for what the editor does from a content-author's perspective.
-- The nav has no ABOUT or CONTACT link — neither page exists yet (a dead
-  link is worse than an absent one), though the bio/social copy this
-  template already collects in `site.config.ts` would make an About page
-  mostly a layout job, not a content one, whenever someone adds it. "WORK"
-  in the nav is a same-page anchor (`#work`) down to the grid section, not
-  a route, so it doesn't need to match the `/projects/` URL it links into.
+- `/about` — About page (`src/pages/about.astro`). All copy comes from
+  the typed `about` object on `site.config.ts` (heading, intro
+  paragraphs, focus phrases, grouped capabilities, a "currently" mono
+  callout, and contact prose) — like everywhere else under `src/pages/`,
+  nothing personal is hardcoded in the page itself. Focus phrases and
+  capability items render via `TagChip.astro` with `interactive={false}`
+  (a prop added for this page) so they render as inert `<span>`s, not
+  the real `<button>`s the homepage's JS-driven filter chips use — there's
+  no JS on this page to back button semantics with. Nav link lives in
+  `SiteHeader.astro`, positioned right after WORK. There's still no
+  separate CONTACT page — the About page's contact block covers that
+  need.
+- "WORK" in the nav is a same-page anchor (`#work`) down to the grid
+  section, not a route, so it doesn't need to match the `/projects/` URL
+  it links into.
 
 ## Accessibility notes
 
