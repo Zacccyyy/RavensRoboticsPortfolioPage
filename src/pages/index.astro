@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CardGrid from '../components/CardGrid.astro';
 import TagChip from '../components/TagChip.astro';
+import SystemReadout from '../components/SystemReadout.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import { CATEGORIES } from '../content.config';
@@ -42,7 +43,7 @@ const websiteSchema = {
 
   <main class="pb-24 pt-32">
     <!-- Hero -->
-    <section class="relative mx-auto mb-24 max-w-max-width px-margin-mobile md:px-margin-desktop">
+    <section class="relative mx-auto mb-16 max-w-max-width px-margin-mobile md:px-margin-desktop">
       <div class="max-w-4xl">
         <h1 class="mb-8 font-display text-display-lg uppercase text-ink md:text-display-xl">
           {siteConfig.tagline}
@@ -51,6 +52,7 @@ const websiteSchema = {
           {siteConfig.bio}
         </p>
       </div>
+      <SystemReadout />
     </section>
 
     <!-- Filters -->
