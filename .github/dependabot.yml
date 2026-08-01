@@ -15,3 +15,14 @@ updates:
       npm-dependencies:
         patterns:
           - '*'
+    # typescript 7.x isn't a version bump this repo can take yet:
+    # @astrojs/check@0.9.10 declares a peer dependency of
+    # typescript@"^5.0.0 || ^6.0.0", so npm ci fails outright (ERESOLVE)
+    # the moment typescript crosses into 7.x — confirmed by a real
+    # Dependabot PR (#1, closed) whose CI run hit exactly this. This isn't
+    # a version we can pin around or force; it's @astrojs/check not
+    # supporting TS 7 yet. Remove this once @astrojs/check widens its
+    # peer range.
+    ignore:
+      - dependency-name: 'typescript'
+        versions: ['7.x']
