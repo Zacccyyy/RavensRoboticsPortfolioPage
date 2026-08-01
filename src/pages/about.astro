@@ -18,7 +18,7 @@ const profileSchema = {
   '@context': 'https://schema.org',
   '@type': 'ProfilePage',
   name: title,
-  url: new URL('/about', siteConfig.seo.siteUrl).toString(),
+  url: new URL('/about/', siteConfig.seo.siteUrl).toString(),
   mainEntity: {
     '@type': 'Person',
     name: siteConfig.name,
@@ -60,9 +60,11 @@ const mailtoHref = `mailto:${siteConfig.email}`;
             <h2 class="mb-4 font-mono text-mono uppercase tracking-widest text-ink-muted">
               {group.label}
             </h2>
-            <div class="flex flex-wrap gap-3">
-              {group.items.map((item) => <TagChip label={item} interactive={false} />)}
-            </div>
+            {group.items.length > 0 && (
+              <div class="flex flex-wrap gap-3">
+                {group.items.map((item) => <TagChip label={item} interactive={false} />)}
+              </div>
+            )}
           </div>
         ))}
       </div>

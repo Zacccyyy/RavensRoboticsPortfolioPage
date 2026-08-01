@@ -94,10 +94,10 @@ const siteConfig: SiteConfig = {
       'PLACEHOLDER -- replace with your own bio. This paragraph introduces who you are and what you build.',
       'PLACEHOLDER -- a second paragraph: background, how you got into this work, or your general approach.',
     ],
-    focus: ['PLACEHOLDER FOCUS AREA', 'PLACEHOLDER FOCUS AREA'],
+    focus: ['PLACEHOLDER FOCUS AREA 1', 'PLACEHOLDER FOCUS AREA 2'],
     stack: [
-      { label: 'HARDWARE', items: ['PLACEHOLDER TOOL'] },
-      { label: 'SOFTWARE', items: ['PLACEHOLDER TOOL'] },
+      { label: 'HARDWARE', items: ['PLACEHOLDER TOOL 1', 'PLACEHOLDER TOOL 2'] },
+      { label: 'SOFTWARE', items: ['PLACEHOLDER TOOL 1', 'PLACEHOLDER TOOL 2'] },
     ],
     currently: 'PLACEHOLDER -- one line on what is actively on the bench right now.',
     contact: 'PLACEHOLDER -- a sentence inviting contact, e.g. reach out to collaborate or talk shop.',
